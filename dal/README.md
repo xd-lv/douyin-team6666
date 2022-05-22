@@ -1,2 +1,2 @@
 数据层
-mysql和redis数据访问
+mysql，redis,minio数据访问
