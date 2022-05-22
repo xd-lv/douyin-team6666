@@ -1,8 +1,12 @@
 package dal
 
-import "main/dal/db"
+import "main/dal/mysqldb"
 
 // Init init dal
 func Init() {
-	db.Init() // mysql
+	mysqldb.Init() // mysql
+
+	// TODO init() rocksdb
+
+	// TODO init() minio
 }
