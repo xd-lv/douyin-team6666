@@ -14,12 +14,12 @@ func initRouter(r *gin.Engine) {
 
 	// basic apis
 	apiRouter.GET("/feed/", controller.Feed)
-
 	apiRouter.POST("/user/register/", controller.Register)
 	apiRouter.POST("/user/login/", controller.Login)
 	apiRouter.Use(jwtUtil.AuthMiddleware.MiddlewareFunc())
 	{
 		apiRouter.GET("/user/", controller.UserInfo)
+
 		apiRouter.POST("/publish/action/", controller.Publish)
 		apiRouter.GET("/publish/list/", controller.PublishList)
 		// extra apis - I
