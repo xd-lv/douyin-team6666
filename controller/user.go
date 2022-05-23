@@ -11,6 +11,7 @@ import (
 	"main/utils/jwtUtil"
 	"main/utils/snowflakeUtil"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -150,16 +151,32 @@ func Login(c *gin.Context) {
 }
 
 func UserInfo(c *gin.Context) {
-	token := c.Query("token")
-
-	if user, exist := usersLoginInfo[token]; exist {
-		c.JSON(http.StatusOK, UserResponse{
-			Response: Response{StatusCode: 0},
-			User:     user,
+	userIdStr := c.Query("user_id")
+	userId, err := strconv.ParseInt(userIdStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusOK, Response{
+			StatusCode: 1,
+			StatusMsg:  err.Error(),
 		})
-	} else {
-		c.JSON(http.StatusOK, UserResponse{
-			Response: Response{StatusCode: 1, StatusMsg: "User doesn't exist"},
-		})
+		return
 	}
+	user, err := mysqldb.GetUser(context.TODO(), userId)
+	if err != nil {
+		c.JSON(http.StatusOK, Response{
+			StatusCode: 1,
+			StatusMsg:  err.Error(),
+		})
+		return
+	}
+	c.JSON(http.StatusOK, UserResponse{
+		Response: Response{StatusCode: 0, StatusMsg: "success"},
+		User: User{
+			Id:            user.Id,
+			Name:          user.UserName,
+			FollowCount:   0,
+			FollowerCount: 0,
+			IsFollow:      false,
+		},
+	})
+	return
 }
