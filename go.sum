@@ -1,3 +1,5 @@
+github.com/anaskhan96/go-password-encoder v0.0.0-20201010210601-c765b799fd72 h1:a93gW7OBt55SksMQVibqPWdu4Ly73KM4d3zoIUUX3cs=
+github.com/anaskhan96/go-password-encoder v0.0.0-20201010210601-c765b799fd72/go.mod h1:PsJICrlruG9QcJDYuZ0dO/2KtMDALzRbony8NkxZ2nE=
 github.com/appleboy/gin-jwt/v2 v2.8.0 h1:Glo7cb9eBR+hj8Y7WzgfkOlqCaNLjP+RV4dNO3fpdps=
 github.com/appleboy/gin-jwt/v2 v2.8.0/go.mod h1:KsK7E8HTvRg3vOiumTsr/ntNTHbZ3IbHLe4Eto31p7k=
 github.com/appleboy/gofight/v2 v2.1.2 h1:VOy3jow4vIK8BRQJoC/I9muxyYlJ2yb9ht2hZoS3rf4=
