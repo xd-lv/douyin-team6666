@@ -4,7 +4,7 @@ const (
 	UserTableName  = "user"
 	VideoTableName = "video"
 	//SecretKey               = "secret key"
-	//IdentityKey             = "id"
+	IdentityKey = "userId"
 	//Total                   = "total"
 	//Notes                   = "notes"
 	//NoteID                  = "note_id"
@@ -15,4 +15,5 @@ const (
 	//EtcdAddress             = "127.0.0.1:2379"
 	//CPURateLimit    float64 = 80.0
 	//DefaultLimit            = 10
+	JWTKey = "1m5FKj1wsfkEDslqglgODkomC57vqrMB" // JWT密钥
 )
