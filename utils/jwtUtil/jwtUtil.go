@@ -4,7 +4,6 @@ import (
 	jwt "github.com/appleboy/gin-jwt/v2"
 	"github.com/gin-gonic/gin"
 	"main/constants"
-	"main/controller"
 	"net/http"
 	"time"
 )
@@ -12,6 +11,17 @@ import (
 var (
 	AuthMiddleware *jwt.GinJWTMiddleware // JWT中间件
 )
+
+type UserLoginResponse struct {
+	Response
+	UserId int64  `json:"user_id,omitempty"`
+	Token  string `json:"token"`
+}
+
+type Response struct {
+	StatusCode int32  `json:"status_code"`
+	StatusMsg  string `json:"status_msg,omitempty"`
+}
 
 func init() {
 	AuthMiddleware, _ = NewJwt()
@@ -40,7 +50,7 @@ func NewJwt() (*jwt.GinJWTMiddleware, error) {
 			} else {
 				code = 0
 			}
-			c.JSON(http.StatusOK, controller.Response{
+			c.JSON(http.StatusOK, Response{
 				StatusCode: int32(code),
 				StatusMsg:  message,
 			})
@@ -56,14 +66,14 @@ func NewJwt() (*jwt.GinJWTMiddleware, error) {
 		LoginResponse: func(c *gin.Context, code int, token string, expire time.Time) {
 			userId, exist := c.Get("userId")
 			if !exist {
-				c.JSON(http.StatusOK, controller.Response{
+				c.JSON(http.StatusOK, Response{
 					StatusCode: 1,
 					StatusMsg:  "无法获取到用户id",
 				})
 				return
 			}
-			c.JSON(http.StatusOK, controller.UserLoginResponse{
-				Response: controller.Response{StatusCode: 0},
+			c.JSON(http.StatusOK, UserLoginResponse{
+				Response: Response{StatusCode: 0},
 				UserId:   int64(userId.(int)),
 				Token:    token,
 			})
