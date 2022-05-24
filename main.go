@@ -2,12 +2,12 @@ package main
 
 import (
 	"github.com/gin-gonic/gin"
-	"main/dal/mysqldb"
+	"main/dal"
 )
 
 func main() {
 	// 初始化工作
-	mysqldb.Init()
+	dal.Init()
 	r := gin.Default()
 
 	initRouter(r)
