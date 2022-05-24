@@ -12,12 +12,12 @@ type User struct {
 }
 
 func (u *User) TableName() string {
-	return constants.UserTableName
+	return constants.MySQLUserTableName
 }
 
 // CreateUser create user info
 func CreateUser(ctx context.Context, user *User) error {
-	if err := DB.WithContext(ctx).Create(user).Error; err != nil {
+	if err := MysqlDB.WithContext(ctx).Create(user).Error; err != nil {
 		return err
 	}
 	return nil
@@ -26,7 +26,7 @@ func CreateUser(ctx context.Context, user *User) error {
 // GetUser get user info
 func GetUser(ctx context.Context, userID int64) (*User, error) {
 	var res *User
-	if err := DB.WithContext(ctx).Where("id = ?", userID).First(&res).Error; err != nil {
+	if err := MysqlDB.WithContext(ctx).Where("id = ?", userID).First(&res).Error; err != nil {
 		return res, err
 	}
 	return res, nil
@@ -36,7 +36,7 @@ func GetUser(ctx context.Context, userID int64) (*User, error) {
 func ListUser(ctx context.Context) ([]*User, error) {
 	var res []*User
 
-	if err := DB.WithContext(ctx).Find(&res).Error; err != nil {
+	if err := MysqlDB.WithContext(ctx).Find(&res).Error; err != nil {
 		return res, err
 	}
 	return res, nil
@@ -57,7 +57,7 @@ func DeleteUser(ctx context.Context, userID int64) error {
 // GetUserByUserName Get user info by username
 func GetUserByUserName(ctx context.Context, userName string) (*User, error) {
 	var res *User
-	if err := DB.WithContext(ctx).Where("user_name = ?", userName).First(&res).Error; err != nil {
+	if err := MysqlDB.WithContext(ctx).Where("user_name = ?", userName).First(&res).Error; err != nil {
 		return res, err
 	}
 	return res, nil

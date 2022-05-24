@@ -7,20 +7,20 @@ import (
 	"main/constants"
 )
 
-var DB *gorm.DB
+var MysqlDB *gorm.DB
 
 // Init init DB
 func Init() {
 	var err error
 
-	DB, err = gorm.Open(mysql.Open(constants.MySQLDefaultDSN),
+	MysqlDB, err = gorm.Open(mysql.Open(constants.MySQLDefaultDSN),
 		&gorm.Config{},
 	)
 	if err != nil {
 		panic(err)
 	}
 
-	if err = DB.Use(gormopentracing.New()); err != nil {
+	if err = MysqlDB.Use(gormopentracing.New()); err != nil {
 		panic(err)
 	}
 

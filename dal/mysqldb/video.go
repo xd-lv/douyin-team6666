@@ -7,7 +7,7 @@ import (
 )
 
 type Video struct {
-	Id              int64     `json:"user_id"`
+	Id              int64     `json:"video_id"`
 	Author          int64     `json:"author_id"`
 	PlayUrl         string    `json:"play_url"`
 	CoverUrl        string    `json:"cover_url"`
@@ -16,22 +16,22 @@ type Video struct {
 }
 
 func (u *Video) TableName() string {
-	return constants.VideoTableName
+	return constants.MySQLVideoTableName
 }
 
 // CreateVideo create video info
-func CreateVideo(ctx context.Context, video *Video) error {
+func CreateVideo(ctx context.Context, video *Video) (*Video, error) {
 	video.CreateTimestamp = time.Now()
-	if err := DB.WithContext(ctx).Create(video).Error; err != nil {
-		return err
+	if err := MysqlDB.WithContext(ctx).Create(video).Error; err != nil {
+		return video, err
 	}
-	return nil
+	return video, nil
 }
 
 // GetVideo get video info
 func GetVideo(ctx context.Context, videoID int64) (*Video, error) {
 	var res *Video
-	if err := DB.WithContext(ctx).Where("id = ?", videoID).First(&res).Error; err != nil {
+	if err := MysqlDB.WithContext(ctx).Where("id = ?", videoID).First(&res).Error; err != nil {
 		return res, err
 	}
 	return res, nil
@@ -41,7 +41,16 @@ func GetVideo(ctx context.Context, videoID int64) (*Video, error) {
 func ListVideo(ctx context.Context) ([]*Video, error) {
 	var res []*Video
 
-	if err := DB.WithContext(ctx).Order("create_timestamp desc").Find(&res).Error; err != nil {
+	if err := MysqlDB.WithContext(ctx).Order("create_timestamp desc").Find(&res).Error; err != nil {
+		return res, err
+	}
+	return res, nil
+}
+
+func ListVideoByUserId(ctx context.Context, userId int64) ([]*Video, error) {
+	var res []*Video
+
+	if err := MysqlDB.WithContext(ctx).Where("author = ?", userId).Find(&res).Error; err != nil {
 		return res, err
 	}
 	return res, nil
@@ -49,7 +58,17 @@ func ListVideo(ctx context.Context) ([]*Video, error) {
 
 // UpdateVideo update video info
 // not need
-func UpdateVideo(ctx context.Context, videoID int64) error {
+func UpdateVideoUrl(ctx context.Context, videoID int64, playUrl string, coverUrl string) error {
+	err := MysqlDB.WithContext(ctx).Model(&Video{}).Where("id = ?", videoID).Update("play_url", playUrl)
+	if err != nil {
+		return err.Error
+	}
+
+	err = MysqlDB.WithContext(ctx).Model(&Video{}).Where("id = ?", videoID).Update("cover_url", coverUrl)
+	if err != nil {
+		return err.Error
+	}
+
 	return nil
 }
 
