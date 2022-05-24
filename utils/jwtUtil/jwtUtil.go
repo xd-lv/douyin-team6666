@@ -1,10 +1,12 @@
 package jwtUtil
 
 import (
+	"fmt"
 	jwt "github.com/appleboy/gin-jwt/v2"
 	"github.com/gin-gonic/gin"
 	"main/constants"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -57,8 +59,8 @@ func NewJwt() (*jwt.GinJWTMiddleware, error) {
 		},
 		PayloadFunc: func(data interface{}) jwt.MapClaims { // 登录期间的回调函数
 			if v, ok := data.(int64); ok {
-				return jwt.MapClaims{
-					constants.IdentityKey: v,
+				return jwt.MapClaims{ // int64赋值给interface类型后转成float64，精度丢失
+					constants.IdentityKey: strconv.FormatInt(v, 10),
 				}
 			}
 			return jwt.MapClaims{}
@@ -97,4 +99,14 @@ func NewJwt() (*jwt.GinJWTMiddleware, error) {
 		TimeFunc: time.Now,
 	})
 	return authMiddleware, err
+}
+
+// AuthTokenForm 表单提交token
+func AuthTokenForm() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		token := c.PostForm("token")
+		c.Request.Header.Set("Authorization", "Bearer "+token)
+		fmt.Println(token)
+		c.Next()
+	}
 }
