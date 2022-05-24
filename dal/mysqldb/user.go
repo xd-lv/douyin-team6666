@@ -56,11 +56,9 @@ func DeleteUser(ctx context.Context, userID int64) error {
 
 // GetUserByUserName Get user info by username
 func GetUserByUserName(ctx context.Context, userName string) (*User, error) {
-	var res User
-	if err := DB.WithContext(ctx).Where(User{
-		UserName: userName,
-	}).First(&res).Error; err != nil {
-		return &res, err
+	var res *User
+	if err := DB.WithContext(ctx).Where("user_name = ?", userName).First(&res).Error; err != nil {
+		return res, err
 	}
-	return &res, nil
+	return res, nil
 }
