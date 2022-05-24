@@ -7,7 +7,6 @@ import (
 	"fmt"
 	md5 "github.com/anaskhan96/go-password-encoder"
 	"gorm.io/gorm"
-	"main/controller"
 	"main/dal/mysqldb"
 	"main/utils/jwtUtil"
 	"main/utils/snowflakeUtil"
@@ -68,20 +67,12 @@ func LoginService(username string, password string) (*string, *int64, error) {
 	return token, &user.Id, nil
 }
 
-func GetUserService(userId int64) (*controller.User, error) {
+func GetUserService(userId int64) (*mysqldb.User, error) {
 	user, err := mysqldb.GetUser(context.TODO(), userId)
 	if err != nil {
 		return nil, errors.New("获取用户信息失败")
 	}
-	// 此处待完善社交部分
-	newUser := &controller.User{
-		Id:            user.Id,
-		Name:          user.UserName,
-		FollowCount:   0,
-		FollowerCount: 0,
-		IsFollow:      false,
-	}
-	return newUser, nil
+	return user, nil
 }
 
 func CreateUserService(ctx context.Context, user *mysqldb.User) error {

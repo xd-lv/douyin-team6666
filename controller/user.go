@@ -40,13 +40,13 @@ func Register(c *gin.Context) {
 			StatusCode: 1,
 			StatusMsg:  err.Error(),
 		})
+		return
 	}
 	c.JSON(http.StatusOK, UserLoginResponse{
 		Response: Response{StatusCode: 0},
 		UserId:   *userId,
 		Token:    *token,
 	})
-	return
 }
 
 func Login(c *gin.Context) {
@@ -58,6 +58,7 @@ func Login(c *gin.Context) {
 			StatusCode: 1,
 			StatusMsg:  err.Error(),
 		})
+		return
 	}
 	c.JSON(http.StatusOK, UserLoginResponse{
 		Response: Response{StatusCode: 0},
@@ -86,7 +87,13 @@ func UserInfo(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, UserResponse{
 		Response: Response{StatusCode: 0, StatusMsg: "success"},
-		User:     *user,
+		User: User{
+			Id:            user.Id,
+			Name:          user.UserName,
+			FollowCount:   0,
+			FollowerCount: 0,
+			IsFollow:      false,
+		},
 	})
 	return
 }
