@@ -1,0 +1,108 @@
+package miniodb
+
+import (
+	"bytes"
+	"context"
+	"fmt"
+	"log"
+	"mime"
+	"os/exec"
+	"strings"
+	"time"
+
+	"github.com/minio/minio-go/v7"
+	"github.com/minio/minio-go/v7/pkg/credentials"
+)
+
+func main() {
+	fileName := "test0522"
+	filePath := "D:\\projectGo\\douyin_video\\"
+	videoName := fileName + ".mp4"
+	videoPath := filePath + videoName
+	upload(videoName, videoPath)
+
+	var ffmpegPath string = "D:/tool/ffmpeg-5.0.1-essentials_build/bin/ffmpeg"
+	getFrame(videoPath, ffmpegPath)
+
+	picName := fileName + ".jpg"
+	picPath := filePath + picName
+	upload(picName, picPath)
+
+}
+
+func upload(objectName string, filePath string) {
+	ctx := context.Background()
+	endpoint := "114.115.220.104:9000"
+	accessKeyID := "root"
+	secretAccessKey := "Douyin6666"
+	useSSL := false
+	// Initialize minio client object.
+	minioClient, err := minio.New(endpoint, &minio.Options{
+		Creds:  credentials.NewStaticV4(accessKeyID, secretAccessKey, ""),
+		Secure: useSSL,
+	})
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	// Make a new bucket called myvideo.
+	bucketName := "myvideo"
+	location := "china"
+
+	err = minioClient.MakeBucket(ctx, bucketName, minio.MakeBucketOptions{Region: location})
+	if err != nil {
+		// Check to see if we already own this bucket (which happens if you run this twice)
+		exists, errBucketExists := minioClient.BucketExists(ctx, bucketName)
+		if errBucketExists == nil && exists {
+			log.Printf("We already own %s\n", bucketName)
+		} else {
+			log.Fatalln(err)
+		}
+	} else {
+		log.Printf("Successfully created %s\n", bucketName)
+	}
+
+	//提取文件后缀类型
+	var ext string
+	if pos := strings.LastIndexByte(objectName, '.'); pos != -1 {
+		ext = objectName[pos:]
+		if ext == "." {
+			ext = ""
+		}
+	}
+	//返回文件扩展类型
+	contentType := mime.TypeByExtension(ext)
+	// Upload the zip file with FPutObject
+	n, err := minioClient.FPutObject(ctx, bucketName, objectName, filePath, minio.PutObjectOptions{ContentType: contentType})
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	path := "http://" + endpoint + "/" + bucketName + "/" + objectName
+	fmt.Println(path)
+	log.Printf("Successfully uploaded %s of size %d\n", objectName, n)
+}
+
+//获取视频中的图片帧
+func getFrame(url string, ffmpegPath string) string {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(50000)*time.Millisecond)
+
+	coverpic := url[:len(url)-3] + "jpg"
+	cmd := exec.Command(ffmpegPath, "-i", url, coverpic, "-loglevel", "error", "-ss", "00:00:01", "-r", "1", "-vframes", "1", "-an", "-vcodec", "mjpeg")
+	defer cancel()
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+	var outputerror string
+	err := cmd.Run()
+	fmt.Println("zuihouyzihenerr:", err)
+	if err != nil {
+		outputerror += fmt.Sprintf("lastframecmderr:%v;", err)
+	}
+	if stderr.Len() != 0 {
+		outputerror += fmt.Sprintf("lastframestderr:%v;", stderr.String())
+	}
+	if ctx.Err() != nil {
+		outputerror += fmt.Sprintf("lastframectxerr:%v;", ctx.Err())
+	}
+	return outputerror
+}
