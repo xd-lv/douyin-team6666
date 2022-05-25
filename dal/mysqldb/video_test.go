@@ -18,23 +18,25 @@ func TestUserCreate(t *testing.T) {
 		Title:    "testTitle",
 	}
 	ctx := context.Background()
-	CreateVideo(ctx, testVideo)
+	testVideo, _ = CreateVideo(ctx, testVideo)
+	println(testVideo.Id)
 }
 
-func TestGetVideo(t *testing.T) {
-	ctx := context.Background()
-	r, err := GetVideo(ctx, 1)
-	if err != nil {
-		println(err)
-	}
-	println(r.Author)
-}
-
-func TestListVideo(t *testing.T) {
-	ctx := context.Background()
-	r, err := ListVideo(ctx)
-	if err != nil {
-		println(err)
-	}
-	println(len(r))
-}
+//
+//func TestGetVideo(t *testing.T) {
+//	ctx := context.Background()
+//	r, err := GetVideo(ctx, 1)
+//	if err != nil {
+//		println(err)
+//	}
+//	println(r.Author)
+//}
+//
+//func TestListVideo(t *testing.T) {
+//	ctx := context.Background()
+//	r, err := ListVideo(ctx)
+//	if err != nil {
+//		println(err)
+//	}
+//	println(len(r))
+//}

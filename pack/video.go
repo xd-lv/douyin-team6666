@@ -5,24 +5,24 @@ import (
 	"main/dal/mysqldb"
 )
 
-type video struct {
-	id            int64
-	title         string
-	author        *user
-	playUrl       string
-	coverUrl      string
-	favoriteCount int64
-	commentCount  int64
-	isFavorite    bool
+type Video struct {
+	Id            int64
+	Title         string
+	Author        *User
+	PlayUrl       string
+	CoverUrl      string
+	FavoriteCount int64
+	CommentCount  int64
+	IsFavorite    bool
 }
 
-func WithVideo(videoID int64) *video {
-	return &video{
-		id: videoID,
+func WithVideo(videoID int64) Video {
+	return Video{
+		Id: videoID,
 	}
 }
 
-func (v *video) GetVideo(ctx context.Context) error {
+func (v *Video) GetVideo(ctx context.Context) error {
 	err := v.getMysqlVideo(ctx)
 	if err != nil {
 		return err
@@ -36,25 +36,25 @@ func (v *video) GetVideo(ctx context.Context) error {
 	return nil
 }
 
-func (v *video) getIsFavorite(ctx context.Context) error {
+func (v *Video) getIsFavorite(ctx context.Context) error {
 	// TODO 获取是否点赞，需要jwt，参数可能需要添加
 	return nil
 }
 
-func (v *video) getRocksdbVideo(ctx context.Context) error {
+func (v *Video) getRocksdbVideo(ctx context.Context) error {
 	// TODO 从rocksdb中查询获得vido点赞评论等字段数据
 	return nil
 }
 
-func (v *video) getMysqlVideo(ctx context.Context) error {
-	dbVideo, err := mysqldb.GetVideo(ctx, v.id)
+func (v *Video) getMysqlVideo(ctx context.Context) error {
+	dbVideo, err := mysqldb.GetVideo(ctx, v.Id)
 	if err != nil {
 		return err
 	}
 
-	v.title = dbVideo.Title
-	v.coverUrl = dbVideo.CoverUrl
-	v.playUrl = dbVideo.PlayUrl
+	v.Title = dbVideo.Title
+	v.CoverUrl = dbVideo.CoverUrl
+	v.PlayUrl = dbVideo.PlayUrl
 
 	author := WithUser(dbVideo.Author)
 	err = author.GetUser(ctx)
@@ -62,7 +62,7 @@ func (v *video) getMysqlVideo(ctx context.Context) error {
 		return err
 	}
 
-	v.author = author
+	v.Author = author
 
 	return nil
 }

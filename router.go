@@ -17,12 +17,13 @@ func initRouter(r *gin.Engine) {
 	apiRouter.POST("/user/register/", controller.Register)
 	apiRouter.POST("/user/login/", controller.Login)
 	apiRouter.POST("/publish/action/", jwtUtil.AuthTokenForm(), jwtUtil.AuthMiddleware.MiddlewareFunc(), controller.Publish)
+
 	apiRouter.Use(jwtUtil.AuthMiddleware.MiddlewareFunc())
 	{
 		apiRouter.GET("/test/", controller.Test)
 		apiRouter.GET("/user/", controller.UserInfo)
-
 		apiRouter.GET("/publish/list/", controller.PublishList)
+
 		// extra apis - I
 		apiRouter.POST("/favorite/action/", controller.FavoriteAction)
 		apiRouter.GET("/favorite/list/", controller.FavoriteList)

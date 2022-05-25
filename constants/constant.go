@@ -1,8 +1,8 @@
 package constants
 
 const (
-	UserTableName  = "user"
-	VideoTableName = "video"
+	MySQLUserTableName  = "user"
+	MySQLVideoTableName = "video"
 	//SecretKey               = "secret key"
 	IdentityKey = "userId"
 	//Total                   = "total"
@@ -16,4 +16,9 @@ const (
 	//CPURateLimit    float64 = 80.0
 	//DefaultLimit            = 10
 	JWTKey = "1m5FKj1wsfkEDslqglgODkomC57vqrMB" // JWT密钥
+
+	MinioEndpoint        = "114.115.220.104:9000" // minio address
+	MinioAccessKeyID     = "root"                 // minio user
+	MinioSecretAccessKey = "Douyin6666"           //minio secret
+	MinioUseSSL          = false
 )
