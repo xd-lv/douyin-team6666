@@ -21,4 +21,6 @@ const (
 	MinioAccessKeyID     = "root"                 // minio user
 	MinioSecretAccessKey = "Douyin6666"           //minio secret
 	MinioUseSSL          = false
+
+	RedisDefaultDSN = "redis://:Douyin6666!@114.115.220.104:6379/"
 )
