@@ -10,12 +10,8 @@ func Test_redisDB(t *testing.T) {
 	ctx := context.Background()
 	err := RDB.Ping(ctx).Err()
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("connect redis failed:", err)
 		return
 	}
-	RDB.Set(ctx, "User:1:Name", "Tom", 0)
-	get := RDB.Get(ctx, "User:1:Name")
-
-	fmt.Println(get.Val())
-
+	fmt.Println("redis connects successfully")
 }
