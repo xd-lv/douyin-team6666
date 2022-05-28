@@ -1,2 +1,2 @@
 # douyin-team6666
-Bytedance go training project: douyin of 6666 team
+Bytedance go training project: douyin of 6666 team.
