@@ -16,9 +16,7 @@ var rdb = redisdb.RDB
 type IRelationService interface {
 	Follow(ctx context.Context, userId int64, toUserId int64) error
 	CancelFollow(ctx context.Context, userId int64, toUserId int64) error
-	GetFollowCount(ctx context.Context, userId int64) (int64, error)
-	GetFollowerCount(ctx context.Context, userId int64) (int64, error)
-	IsAFollowB(ctx context.Context, userAId int64, userBId int64) (bool, error)
+	GetUser(ctx context.Context, userAId int64, userBId int64) (pack.User, error)
 	GetFollowList(ctx context.Context, userId int64) ([]pack.User, error)
 	GetFollowerList(ctx context.Context, userId int64) ([]pack.User, error)
 }
@@ -63,8 +61,8 @@ func (rs *Impl) CancelFollow(ctx context.Context, userId int64, toUserId int64) 
 	return nil
 }
 
-// GetFollowCount 获取关注数量
-func (rs *Impl) GetFollowCount(ctx context.Context, userId int64) (int64, error) {
+// getFollowCount 获取关注数量
+func (rs *Impl) getFollowCount(ctx context.Context, userId int64) (int64, error) {
 	followKey := "follow_" + strconv.FormatInt(userId, 10)
 	followCount, err := rdb.ZCard(ctx, followKey).Result()
 	if err != nil {
@@ -73,8 +71,8 @@ func (rs *Impl) GetFollowCount(ctx context.Context, userId int64) (int64, error)
 	return followCount, nil
 }
 
-// GetFollowerCount 获取粉丝数量
-func (rs *Impl) GetFollowerCount(ctx context.Context, userId int64) (int64, error) {
+// getFollowerCount 获取粉丝数量
+func (rs *Impl) getFollowerCount(ctx context.Context, userId int64) (int64, error) {
 	fansKey := "fans_" + strconv.FormatInt(userId, 10)
 	followerCount, err := rdb.ZCard(ctx, fansKey).Result()
 	if err != nil {
@@ -83,8 +81,8 @@ func (rs *Impl) GetFollowerCount(ctx context.Context, userId int64) (int64, erro
 	return followerCount, nil
 }
 
-// IsAFollowB 判断用户A是否关注了用户B
-func (rs *Impl) IsAFollowB(ctx context.Context, userAId int64, userBId int64) (bool, error) {
+// isAFollowB 判断用户A是否关注了用户B
+func (rs *Impl) isAFollowB(ctx context.Context, userAId int64, userBId int64) (bool, error) {
 	followKey := "follow_" + strconv.FormatInt(userAId, 10)
 	userBIdStr := strconv.FormatInt(userBId, 10)
 	if err := rdb.ZRank(ctx, followKey, userBIdStr).Err(); err == redis.Nil {
@@ -93,6 +91,32 @@ func (rs *Impl) IsAFollowB(ctx context.Context, userAId int64, userBId int64) (b
 		return false, errors.New("redis server error")
 	}
 	return true, nil
+}
+
+// GetUser 获取用户B的信息
+func (rs *Impl) GetUser(ctx context.Context, userAId int64, userBId int64) (pack.User, error) {
+	user := pack.User{Id: userBId}
+
+	username, err := mysqldb.GetUserNameByID(ctx, user.Id)
+	if err != nil {
+		return user, err
+	}
+	user.Name = username
+
+	user.FollowCount, err = rs.getFollowCount(ctx, user.Id)
+	if err != nil {
+		return user, err
+	}
+	user.FolloerCount, err = rs.getFollowerCount(ctx, user.Id)
+	if err != nil {
+		return user, err
+	}
+	user.IsFollow, err = rs.isAFollowB(ctx, userAId, user.Id)
+	if err != nil {
+		return user, err
+	}
+
+	return user, nil
 }
 
 // GetFollowList 获取关注列表
@@ -107,25 +131,11 @@ func (rs *Impl) GetFollowList(ctx context.Context, userId int64) ([]pack.User, e
 
 	for _, idStr := range res {
 		id, _ := strconv.ParseInt(idStr, 10, 64)
-		username, err := mysqldb.GetUserNameByID(ctx, id)
+		user, err := rs.GetUser(ctx, userId, id)
 		if err != nil {
 			return []pack.User{}, err
 		}
-		followCount, err := rs.GetFollowCount(ctx, id)
-		if err != nil {
-			return []pack.User{}, err
-		}
-		folloerCount, err := rs.GetFollowerCount(ctx, id)
-		if err != nil {
-			return []pack.User{}, err
-		}
-		users = append(users, pack.User{
-			Id:           id,
-			Name:         username,
-			FollowCount:  followCount,
-			FolloerCount: folloerCount,
-			IsFollow:     true,
-		})
+		users = append(users, user)
 	}
 
 	return users, nil
@@ -143,29 +153,11 @@ func (rs *Impl) GetFollowerList(ctx context.Context, userId int64) ([]pack.User,
 
 	for _, idStr := range res {
 		id, _ := strconv.ParseInt(idStr, 10, 64)
-		username, err := mysqldb.GetUserNameByID(ctx, id)
+		user, err := rs.GetUser(ctx, userId, id)
 		if err != nil {
 			return []pack.User{}, err
 		}
-		followCount, err := rs.GetFollowCount(ctx, id)
-		if err != nil {
-			return []pack.User{}, err
-		}
-		folloerCount, err := rs.GetFollowerCount(ctx, id)
-		if err != nil {
-			return []pack.User{}, err
-		}
-		isFollow, err := rs.IsAFollowB(ctx, userId, id)
-		if err != nil {
-			return []pack.User{}, err
-		}
-		users = append(users, pack.User{
-			Id:           id,
-			Name:         username,
-			FollowCount:  followCount,
-			FolloerCount: folloerCount,
-			IsFollow:     isFollow,
-		})
+		users = append(users, user)
 	}
 
 	return users, nil

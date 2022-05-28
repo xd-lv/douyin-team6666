@@ -56,13 +56,14 @@ func (v *Video) getMysqlVideo(ctx context.Context) error {
 	v.CoverUrl = dbVideo.CoverUrl
 	v.PlayUrl = dbVideo.PlayUrl
 
-	author := WithUser(dbVideo.Author)
-	err = author.GetUser(ctx)
-	if err != nil {
-		return err
-	}
+	// todo 发生循环引用，先注释了，待改动
+	// author := WithUser(dbVideo.Author)
+	// err = author.GetUser(ctx)
+	// if err != nil {
+	// 	 return err
+	// }
 
-	v.Author = author
+	// v.Author = author
 
 	return nil
 }

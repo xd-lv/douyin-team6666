@@ -6,18 +6,18 @@ import (
 	"main/constants"
 )
 
-type User struct {
+type UserInfo struct {
 	Id           int64  `json:"user_id"`
 	UserName     string `json:"user_name"`
 	UserPassword string `json:"user_password"`
 }
 
-func (u *User) TableName() string {
+func (u *UserInfo) TableName() string {
 	return constants.MySQLUserTableName
 }
 
 // CreateUser create user info
-func CreateUser(ctx context.Context, user *User) error {
+func CreateUser(ctx context.Context, user *UserInfo) error {
 	if err := MysqlDB.WithContext(ctx).Create(user).Error; err != nil {
 		return err
 	}
@@ -25,8 +25,8 @@ func CreateUser(ctx context.Context, user *User) error {
 }
 
 // GetUser get user info
-func GetUser(ctx context.Context, userID int64) (*User, error) {
-	var res *User
+func GetUser(ctx context.Context, userID int64) (*UserInfo, error) {
+	var res *UserInfo
 	if err := MysqlDB.WithContext(ctx).Where("id = ?", userID).First(&res).Error; err != nil {
 		return res, err
 	}
@@ -34,8 +34,8 @@ func GetUser(ctx context.Context, userID int64) (*User, error) {
 }
 
 // ListUser list all users info
-func ListUser(ctx context.Context) ([]*User, error) {
-	var res []*User
+func ListUser(ctx context.Context) ([]*UserInfo, error) {
+	var res []*UserInfo
 
 	if err := MysqlDB.WithContext(ctx).Find(&res).Error; err != nil {
 		return res, err
@@ -56,8 +56,8 @@ func DeleteUser(ctx context.Context, userID int64) error {
 }
 
 // GetUserByUserName Get user info by username
-func GetUserByUserName(ctx context.Context, userName string) (*User, error) {
-	var res *User
+func GetUserByUserName(ctx context.Context, userName string) (*UserInfo, error) {
+	var res *UserInfo
 	if err := MysqlDB.WithContext(ctx).Where("user_name = ?", userName).First(&res).Error; err != nil {
 		return res, err
 	}
@@ -66,7 +66,7 @@ func GetUserByUserName(ctx context.Context, userName string) (*User, error) {
 
 // GetUserNameByID 通过 userID 获取对应的用户名
 func GetUserNameByID(ctx context.Context, userID int64) (string, error) {
-	var user User
+	var user UserInfo
 	if err := MysqlDB.WithContext(ctx).Select("user_name").First(&user, userID).Error; err != nil {
 		return "", errors.New("mysql server error")
 	}
