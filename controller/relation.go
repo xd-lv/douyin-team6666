@@ -52,7 +52,7 @@ func RelationAction(c *gin.Context) {
 	c.JSON(http.StatusOK, Response{StatusCode: 0})
 }
 
-// FollowList all users have same follow list
+// FollowList 关注列表
 func FollowList(c *gin.Context) {
 	uid, err := strconv.ParseInt(c.Query("user_id"), 10, 64)
 	if err != nil {
@@ -88,10 +88,34 @@ func FollowList(c *gin.Context) {
 
 // FollowerList all users have same follower list
 func FollowerList(c *gin.Context) {
+	uid, err := strconv.ParseInt(c.Query("user_id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusOK, UserListResponse{
+			Response: Response{
+				StatusCode: 1,
+				StatusMsg:  "Input parameter error",
+			},
+			UserList: []pack.User{},
+		})
+		return
+	}
+
+	users, err := relationService.GetFollowerList(c, uid)
+	if err != nil {
+		c.JSON(http.StatusOK, UserListResponse{
+			Response: Response{
+				StatusCode: 2,
+				StatusMsg:  err.Error(),
+			},
+			UserList: users,
+		})
+		return
+	}
+
 	c.JSON(http.StatusOK, UserListResponse{
 		Response: Response{
 			StatusCode: 0,
 		},
-		UserList: []pack.User{},
+		UserList: users,
 	})
 }
