@@ -107,7 +107,7 @@ func (rs *Impl) GetUser(ctx context.Context, userAId int64, userBId int64) (pack
 	if err != nil {
 		return user, err
 	}
-	user.FolloerCount, err = rs.getFollowerCount(ctx, user.Id)
+	user.FollowerCount, err = rs.getFollowerCount(ctx, user.Id)
 	if err != nil {
 		return user, err
 	}
