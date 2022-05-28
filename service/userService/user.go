@@ -29,7 +29,7 @@ func RegisterService(username string, password string) (*string, *int64, error) 
 	salt, encodePwd := md5.Encode(password, options)
 	newPassword := fmt.Sprintf("$pbkdf2-sha512$%s$%s", salt, encodePwd)
 	// 注册用户
-	user := &mysqldb.User{
+	user := &mysqldb.UserInfo{
 		Id:           snowflakeUtil.NewId(),
 		UserName:     username,
 		UserPassword: newPassword,
@@ -67,7 +67,7 @@ func LoginService(username string, password string) (*string, *int64, error) {
 	return token, &user.Id, nil
 }
 
-func GetUserService(userId int64) (*mysqldb.User, error) {
+func GetUserService(userId int64) (*mysqldb.UserInfo, error) {
 	user, err := mysqldb.GetUser(context.TODO(), userId)
 	if err != nil {
 		return nil, errors.New("获取用户信息失败")
@@ -75,14 +75,14 @@ func GetUserService(userId int64) (*mysqldb.User, error) {
 	return user, nil
 }
 
-func createUserService(ctx context.Context, user *mysqldb.User) error {
+func createUserService(ctx context.Context, user *mysqldb.UserInfo) error {
 	if err := mysqldb.CreateUser(ctx, user); err != nil {
 		return errors.New("创建用户失败")
 	}
 	return nil
 }
 
-func getUserByUserNameService(ctx context.Context, userName string) (*mysqldb.User, error) {
+func getUserByUserNameService(ctx context.Context, userName string) (*mysqldb.UserInfo, error) {
 	user, err := mysqldb.GetUserByUserName(ctx, userName)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {

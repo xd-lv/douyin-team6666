@@ -3,7 +3,7 @@ package controller
 import (
 	"github.com/gin-gonic/gin"
 	"main/pack"
-	"main/service/relationService"
+	"main/service"
 	"net/http"
 	"strconv"
 )
@@ -34,13 +34,13 @@ func RelationAction(c *gin.Context) {
 	}
 
 	if action.Type == ActionFollow {
-		err := relationService.Follow(c, action.Uid, action.ToUid)
+		err := service.RelationService.Follow(c, action.Uid, action.ToUid)
 		if err != nil {
 			c.JSON(http.StatusOK, Response{StatusCode: 2, StatusMsg: err.Error()})
 			return
 		}
 	} else if action.Type == ActionCancelFollow {
-		err := relationService.CancelFollow(c, action.Uid, action.ToUid)
+		err := service.RelationService.CancelFollow(c, action.Uid, action.ToUid)
 		if err != nil {
 			c.JSON(http.StatusOK, Response{StatusCode: 2, StatusMsg: err.Error()})
 			return
@@ -61,19 +61,17 @@ func FollowList(c *gin.Context) {
 				StatusCode: 1,
 				StatusMsg:  "Input parameter error",
 			},
-			UserList: []pack.User{},
 		})
 		return
 	}
 
-	users, err := relationService.GetFollowList(c, uid)
+	users, err := service.RelationService.GetFollowList(c, uid)
 	if err != nil {
 		c.JSON(http.StatusOK, UserListResponse{
 			Response: Response{
 				StatusCode: 2,
 				StatusMsg:  err.Error(),
 			},
-			UserList: users,
 		})
 		return
 	}
@@ -86,7 +84,7 @@ func FollowList(c *gin.Context) {
 	})
 }
 
-// FollowerList all users have same follower list
+// FollowerList 粉丝列表
 func FollowerList(c *gin.Context) {
 	uid, err := strconv.ParseInt(c.Query("user_id"), 10, 64)
 	if err != nil {
@@ -95,19 +93,17 @@ func FollowerList(c *gin.Context) {
 				StatusCode: 1,
 				StatusMsg:  "Input parameter error",
 			},
-			UserList: []pack.User{},
 		})
 		return
 	}
 
-	users, err := relationService.GetFollowerList(c, uid)
+	users, err := service.RelationService.GetFollowerList(c, uid)
 	if err != nil {
 		c.JSON(http.StatusOK, UserListResponse{
 			Response: Response{
 				StatusCode: 2,
 				StatusMsg:  err.Error(),
 			},
-			UserList: users,
 		})
 		return
 	}
