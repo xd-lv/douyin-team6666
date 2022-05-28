@@ -6,7 +6,7 @@ import (
 )
 
 func TestCreateUser(t *testing.T) {
-	testUser := &User{
+	testUser := &UserInfo{
 		UserName:     "test1",
 		UserPassword: "test",
 	}
