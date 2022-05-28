@@ -62,3 +62,12 @@ func GetUserByUserName(ctx context.Context, userName string) (*User, error) {
 	}
 	return res, nil
 }
+
+// GetUserNameByID 通过 userID 获取对应的用户名
+func GetUserNameByID(ctx context.Context, userID int64) (string, error) {
+	var user User
+	if err := MysqlDB.WithContext(ctx).Select("user_name").First(&user, userID).Error; err != nil {
+		return "", err
+	}
+	return user.UserName, nil
+}

@@ -1,4 +1,4 @@
-package dal
+package redisdb
 
 import (
 	"context"
@@ -8,7 +8,6 @@ import (
 
 func Test_redisDB(t *testing.T) {
 	ctx := context.Background()
-	Init()
 	err := RDB.Ping(ctx).Err()
 	if err != nil {
 		fmt.Println(err)

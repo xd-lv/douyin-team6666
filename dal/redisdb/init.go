@@ -1,4 +1,4 @@
-package dal
+package redisdb
 
 import (
 	"github.com/go-redis/redis/v8"
