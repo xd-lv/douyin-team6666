@@ -1,6 +1,7 @@
 package jwtUtil
 
 import (
+	"errors"
 	"fmt"
 	jwt "github.com/appleboy/gin-jwt/v2"
 	"github.com/gin-gonic/gin"
@@ -109,4 +110,18 @@ func AuthTokenForm() gin.HandlerFunc {
 		fmt.Println(token)
 		c.Next()
 	}
+}
+
+// GetLoginUserId 获取当前登录用户的userId
+func GetLoginUserId(c *gin.Context) (userId int64, err error) {
+	claim, err := AuthMiddleware.GetClaimsFromJWT(c)
+	if err != nil {
+		return 0, errors.New("Failed to get user id")
+	}
+	userIdStr := claim[constants.IdentityKey].(string)
+	userId, err = strconv.ParseInt(userIdStr, 10, 64)
+	if err != nil {
+		return 0, errors.New("Failed to convert string to int64")
+	}
+	return userId, nil
 }
