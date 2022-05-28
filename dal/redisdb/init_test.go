@@ -1,4 +1,4 @@
-package redisdb
+package dal
 
 import (
 	"context"
@@ -9,13 +9,13 @@ import (
 func Test_redisDB(t *testing.T) {
 	ctx := context.Background()
 	Init()
-	err := RedisDB.Ping(ctx).Err()
+	err := RDB.Ping(ctx).Err()
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	RedisDB.Set(ctx, "User:1:Name", "Tom", 0)
-	get := RedisDB.Get(ctx, "User:1:Name")
+	RDB.Set(ctx, "User:1:Name", "Tom", 0)
+	get := RDB.Get(ctx, "User:1:Name")
 
 	fmt.Println(get.Val())
 

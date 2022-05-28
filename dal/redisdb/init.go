@@ -1,4 +1,4 @@
-package redisdb
+package dal
 
 import (
 	"github.com/go-redis/redis/v8"
@@ -10,13 +10,12 @@ import (
 	使用该类型的Redis框架，该连接为介绍
 */
 
-var RedisDB *redis.Client
+var RDB *redis.Client
 
-func Init() {
+func init() {
 	opt, err := redis.ParseURL(constants.RedisDefaultDSN)
 	if err != nil {
 		panic(err)
 	}
-	RedisDB = redis.NewClient(opt)
-
+	RDB = redis.NewClient(opt)
 }

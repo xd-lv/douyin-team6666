@@ -8,9 +8,5 @@ import (
 // Init init dal
 func Init() {
 	mysqldb.Init() // mysql
-
-	// TODO init() rocksdb
-
-	// TODO init() minio
-	miniodb.Init()
+	miniodb.Init() // minio
 }
