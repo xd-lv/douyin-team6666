@@ -6,6 +6,7 @@ require (
 	github.com/anaskhan96/go-password-encoder v0.0.0-20201010210601-c765b799fd72
 	github.com/appleboy/gin-jwt/v2 v2.8.0
 	github.com/gin-gonic/gin v1.7.7
+	github.com/go-redis/redis/v8 v8.11.5
 	github.com/minio/minio-go v6.0.14+incompatible
 	gorm.io/driver/mysql v1.3.3
 	gorm.io/gorm v1.23.5
@@ -13,6 +14,8 @@ require (
 )
 
 require (
+	github.com/cespare/xxhash/v2 v2.1.2 // indirect
+	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/go-ini/ini v1.66.4 // indirect
 	github.com/go-playground/locales v0.14.0 // indirect
