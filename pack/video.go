@@ -5,17 +5,6 @@ import (
 	"main/dal/mysqldb"
 )
 
-type Video struct {
-	Id            int64
-	Title         string
-	Author        *User
-	PlayUrl       string
-	CoverUrl      string
-	FavoriteCount int64
-	CommentCount  int64
-	IsFavorite    bool
-}
-
 func WithVideo(videoID int64) Video {
 	return Video{
 		Id: videoID,
@@ -62,7 +51,7 @@ func (v *Video) getMysqlVideo(ctx context.Context) error {
 		return err
 	}
 
-	v.Author = author
+	v.Author = *author
 
 	return nil
 }

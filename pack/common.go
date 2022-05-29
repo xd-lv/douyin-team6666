@@ -1,4 +1,4 @@
-package controller
+package pack
 
 type Response struct {
 	StatusCode int32  `json:"status_code"`
@@ -7,6 +7,7 @@ type Response struct {
 
 type Video struct {
 	Id            int64  `json:"id,omitempty"`
+	Title         string `json:"title,omitempty"`
 	Author        User   `json:"author"`
 	PlayUrl       string `json:"play_url" json:"play_url,omitempty"`
 	CoverUrl      string `json:"cover_url,omitempty"`
