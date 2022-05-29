@@ -16,7 +16,8 @@ var rdb = redisdb.RDB
 type IRelationService interface {
 	Follow(ctx context.Context, userId int64, toUserId int64) error
 	CancelFollow(ctx context.Context, userId int64, toUserId int64) error
-	GetUser(ctx context.Context, userAId int64, userBId int64) (pack.User, error)
+	GetRelationUser(ctx context.Context, userId int64) (pack.User, error)
+	GetRelationAuthor(ctx context.Context, authorId int64, userId int64) (pack.User, error)
 	GetFollowList(ctx context.Context, userId int64) ([]pack.User, error)
 	GetFollowerList(ctx context.Context, userId int64) ([]pack.User, error)
 }
@@ -93,9 +94,9 @@ func (rs *Impl) isAFollowB(ctx context.Context, userAId int64, userBId int64) (b
 	return true, nil
 }
 
-// GetUser 获取用户B的信息
-func (rs *Impl) GetUser(ctx context.Context, userAId int64, userBId int64) (pack.User, error) {
-	user := pack.User{Id: userBId}
+// GetRelationUser 获取 `用户`(登录用户|操作人) 的关系信息，包含关注数和粉丝数，字段 `IsFollow` 默认 false
+func (rs *Impl) GetRelationUser(ctx context.Context, userId int64) (pack.User, error) {
+	user := pack.User{Id: userId}
 
 	username, err := mysqldb.GetUserNameByID(ctx, user.Id)
 	if err != nil {
@@ -111,7 +112,18 @@ func (rs *Impl) GetUser(ctx context.Context, userAId int64, userBId int64) (pack
 	if err != nil {
 		return user, err
 	}
-	user.IsFollow, err = rs.isAFollowB(ctx, userAId, user.Id)
+
+	return user, nil
+}
+
+// GetRelationAuthor 获取 `作者`(视频作者、评论作者等) 的关系信息，其中还包含 `用户` 对 `作者` 的关注情况
+func (rs *Impl) GetRelationAuthor(ctx context.Context, authorId int64, userId int64) (pack.User, error) {
+	user, err := rs.GetRelationUser(ctx, authorId)
+	if err != nil {
+		return user, err
+	}
+
+	user.IsFollow, err = rs.isAFollowB(ctx, userId, authorId)
 	if err != nil {
 		return user, err
 	}
@@ -131,7 +143,7 @@ func (rs *Impl) GetFollowList(ctx context.Context, userId int64) ([]pack.User, e
 
 	for _, idStr := range res {
 		id, _ := strconv.ParseInt(idStr, 10, 64)
-		user, err := rs.GetUser(ctx, userId, id)
+		user, err := rs.GetRelationAuthor(ctx, id, userId)
 		if err != nil {
 			return []pack.User{}, err
 		}
@@ -153,7 +165,7 @@ func (rs *Impl) GetFollowerList(ctx context.Context, userId int64) ([]pack.User,
 
 	for _, idStr := range res {
 		id, _ := strconv.ParseInt(idStr, 10, 64)
-		user, err := rs.GetUser(ctx, userId, id)
+		user, err := rs.GetRelationAuthor(ctx, id, userId)
 		if err != nil {
 			return []pack.User{}, err
 		}
