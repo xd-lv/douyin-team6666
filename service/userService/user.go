@@ -18,7 +18,7 @@ func RegisterService(username string, password string) (*string, *int64, error) 
 		return nil, nil, errors.New("请检查用户名或密码是否为空")
 	}
 	// 查用户名是否已存在
-	_, err := GetUserByUserNameService(context.TODO(), username)
+	_, err := getUserByUserNameService(context.TODO(), username)
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return nil, nil, err
 	} else if err == nil {
@@ -29,16 +29,16 @@ func RegisterService(username string, password string) (*string, *int64, error) 
 	salt, encodePwd := md5.Encode(password, options)
 	newPassword := fmt.Sprintf("$pbkdf2-sha512$%s$%s", salt, encodePwd)
 	// 注册用户
-	user := &mysqldb.User{
+	user := &mysqldb.UserInfo{
 		Id:           snowflakeUtil.NewId(),
 		UserName:     username,
 		UserPassword: newPassword,
 	}
-	if err = CreateUserService(context.TODO(), user); err != nil {
+	if err = createUserService(context.TODO(), user); err != nil {
 		return nil, nil, err
 	}
 	// 此处生成token, userId将保存在jwt中，具体实现在PayloadFunc
-	token, err := CreateTokenService(user.Id)
+	token, err := createTokenService(user.Id)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -50,7 +50,7 @@ func LoginService(username string, password string) (*string, *int64, error) {
 		return nil, nil, errors.New("请检查用户名或密码是否为空")
 	}
 	// 查用户
-	user, err := GetUserByUserNameService(context.TODO(), username)
+	user, err := getUserByUserNameService(context.TODO(), username)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -60,14 +60,14 @@ func LoginService(username string, password string) (*string, *int64, error) {
 	if check := md5.Verify(password, passwordInfo[2], passwordInfo[3], options); !check {
 		return nil, nil, errors.New("密码错误")
 	}
-	token, err := CreateTokenService(user.Id)
+	token, err := createTokenService(user.Id)
 	if err != nil {
 		return nil, nil, err
 	}
 	return token, &user.Id, nil
 }
 
-func GetUserService(userId int64) (*mysqldb.User, error) {
+func GetUserService(userId int64) (*mysqldb.UserInfo, error) {
 	user, err := mysqldb.GetUser(context.TODO(), userId)
 	if err != nil {
 		return nil, errors.New("获取用户信息失败")
@@ -75,14 +75,14 @@ func GetUserService(userId int64) (*mysqldb.User, error) {
 	return user, nil
 }
 
-func CreateUserService(ctx context.Context, user *mysqldb.User) error {
+func createUserService(ctx context.Context, user *mysqldb.UserInfo) error {
 	if err := mysqldb.CreateUser(ctx, user); err != nil {
 		return errors.New("创建用户失败")
 	}
 	return nil
 }
 
-func GetUserByUserNameService(ctx context.Context, userName string) (*mysqldb.User, error) {
+func getUserByUserNameService(ctx context.Context, userName string) (*mysqldb.UserInfo, error) {
 	user, err := mysqldb.GetUserByUserName(ctx, userName)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -93,7 +93,7 @@ func GetUserByUserNameService(ctx context.Context, userName string) (*mysqldb.Us
 	return user, nil
 }
 
-func CreateTokenService(userId int64) (*string, error) {
+func createTokenService(userId int64) (*string, error) {
 	token, _, err := jwtUtil.AuthMiddleware.TokenGenerator(userId)
 	if err != nil {
 		return nil, errors.New("生成token失败")

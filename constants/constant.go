@@ -22,5 +22,6 @@ const (
 	MinioSecretAccessKey = "Douyin6666"           //minio secret
 	MinioUseSSL          = false
 
-	FeedLimit = 30
+	FeedLimit       = 30
+	RedisDefaultDSN = "redis://:Douyin6666!@114.115.220.104:6379/"
 )
