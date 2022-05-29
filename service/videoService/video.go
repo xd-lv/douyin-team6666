@@ -10,6 +10,31 @@ import (
 	"time"
 )
 
+func Feed(ctx context.Context, latestTime string) ([]pack.Video, int64, error) {
+	var res []pack.Video
+	var videos []*mysqldb.Video
+	var err error
+	if latestTime == "" {
+		videos, err = mysqldb.ListVideo(ctx)
+		if err != nil {
+			return nil, 0, err
+		}
+	} else {
+
+		videos, err = mysqldb.ListVideoByLimit(ctx, latestTime)
+		if err != nil {
+			return nil, 0, err
+		}
+	}
+
+	for _, video := range videos {
+		v := pack.WithVideo(video.Id)
+		v.GetVideo(ctx)
+		res = append(res, v)
+	}
+	return res, 0, nil
+}
+
 func PublishList(ctx context.Context, userId int64) ([]pack.Video, error) {
 	var res []pack.Video
 
@@ -38,7 +63,7 @@ func Publish(ctx context.Context, file *multipart.FileHeader, title string, user
 		PlayUrl:         "",
 		CoverUrl:        "",
 		Title:           title,
-		CreateTimestamp: time.Now(),
+		CreateTimestamp: time.Now().Format("2006-01-02 15:04:05"),
 	}
 
 	videoRecord, err = mysqldb.CreateVideo(ctx, videoRecord)

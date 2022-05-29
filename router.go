@@ -20,7 +20,7 @@ func initRouter(r *gin.Engine) {
 
 	apiRouter.Use(jwtUtil.AuthMiddleware.MiddlewareFunc())
 	{
-		apiRouter.GET("/test/", controller.Test)
+		//apiRouter.GET("/test/", controller.Test)
 		apiRouter.GET("/user/", controller.UserInfo)
 		apiRouter.GET("/publish/list/", controller.PublishList)
 

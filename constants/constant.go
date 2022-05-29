@@ -21,4 +21,6 @@ const (
 	MinioAccessKeyID     = "root"                 // minio user
 	MinioSecretAccessKey = "Douyin6666"           //minio secret
 	MinioUseSSL          = false
+
+	FeedLimit = 30
 )

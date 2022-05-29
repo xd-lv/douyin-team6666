@@ -29,8 +29,7 @@ func Publish(c *gin.Context) {
 		c.JSON(http.StatusOK, Response{StatusCode: 1, StatusMsg: "User doesn't exist"})
 		return
 	}
-
-	userId := claim[constants.IdentityKey].(int64)
+	userId, _ := strconv.ParseInt(claim[constants.IdentityKey].(string), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusOK, Response{
 			StatusCode: 1,
