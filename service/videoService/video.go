@@ -20,7 +20,6 @@ func Feed(ctx context.Context, latestTime string) ([]pack.Video, int64, error) {
 			return nil, 0, err
 		}
 	} else {
-
 		videos, err = mysqldb.ListVideoByLimit(ctx, latestTime)
 		if err != nil {
 			return nil, 0, err
@@ -78,9 +77,9 @@ func Publish(ctx context.Context, file *multipart.FileHeader, title string, user
 
 	var purl, curl string
 	if len(videos) == 0 {
-		purl, curl, err = upload(file, user.UserName, videoRecord.Id, false)
-	} else {
 		purl, curl, err = upload(file, user.UserName, videoRecord.Id, true)
+	} else {
+		purl, curl, err = upload(file, user.UserName, videoRecord.Id, false)
 	}
 	if err != nil {
 		return err
@@ -111,6 +110,7 @@ func upload(sfile *multipart.FileHeader, userName string, videoId int64, isCreat
 	}
 	purl, err = miniodb.Upload(file, bucketName, strconv.FormatInt(videoId, 10)+"-play", sfile.Size)
 	if err != nil {
+
 		return purl, curl, err
 	}
 	// TODO cover 截取

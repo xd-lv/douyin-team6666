@@ -18,7 +18,7 @@ func Upload(file multipart.File, bukectName string, objectName string, fileSize 
 }
 
 func Create(bucketName string) error {
-	err := MinioDB.MakeBucket(bucketName, "china")
+	err := MinioDB.MakeBucket(bucketName, "us-east-1")
 	if err != nil {
 		return err
 	}

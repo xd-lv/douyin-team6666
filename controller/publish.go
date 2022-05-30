@@ -66,8 +66,20 @@ func Publish(c *gin.Context) {
 
 // PublishList all users have same publish video list
 func PublishList(c *gin.Context) {
-	user := c.Query("user_id")
-	userId, _ := strconv.ParseInt(user, 10, 64)
+
+	claim, err := jwtUtil.AuthMiddleware.GetClaimsFromJWT(c)
+	if err != nil {
+		c.JSON(http.StatusOK, Response{StatusCode: 1, StatusMsg: "User doesn't exist"})
+		return
+	}
+	userId, _ := strconv.ParseInt(claim[constants.IdentityKey].(string), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusOK, Response{
+			StatusCode: 1,
+			StatusMsg:  err.Error(),
+		})
+		return
+	}
 
 	ctx := context.Background()
 
