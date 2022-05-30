@@ -24,3 +24,8 @@ func Create(bucketName string) error {
 	}
 	return nil
 }
+
+func IsExists(bucketName string) bool {
+	exists, _ := MinioDB.BucketExists(bucketName)
+	return exists
+}

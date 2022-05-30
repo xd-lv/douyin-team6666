@@ -101,11 +101,15 @@ func (us *Impl) GetUserBody(ctx context.Context, userId int64) (*pack.User, erro
 
 	userInfo, err := us.GetUserService(ctx, userId)
 	if err != nil {
-		return nil, err
+		return res, err
 	}
 	res.Name = userInfo.UserName
 
-	//us.relationService
+	err = us.relationService.GetRelation(ctx, res)
+
+	if err != nil {
+		return res, err
+	}
 
 	return res, nil
 }
