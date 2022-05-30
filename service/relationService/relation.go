@@ -16,6 +16,7 @@ var rdb = redisdb.RDB
 type IRelationService interface {
 	Follow(ctx context.Context, userId int64, toUserId int64) error
 	CancelFollow(ctx context.Context, userId int64, toUserId int64) error
+	GetRelation(ctx context.Context, user *pack.User) error
 	GetRelationUser(ctx context.Context, userId int64) (pack.User, error)
 	GetRelationAuthor(ctx context.Context, authorId int64, userId int64) (pack.User, error)
 	GetFollowList(ctx context.Context, userId int64) ([]pack.User, error)
@@ -94,6 +95,22 @@ func (rs *Impl) isAFollowB(ctx context.Context, userAId int64, userBId int64) (b
 	return true, nil
 }
 
+// GetRelation 为 `用户`(登录用户|操作人) 提供 粉丝 及 关注 计数，字段 `IsFollow` 默认 false
+func (rs *Impl) GetRelation(ctx context.Context, user *pack.User) error {
+	var err error
+
+	user.FollowCount, err = rs.getFollowCount(ctx, user.Id)
+	if err != nil {
+		return err
+	}
+	user.FollowerCount, err = rs.getFollowerCount(ctx, user.Id)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // GetRelationUser 获取 `用户`(登录用户|操作人) 的关系信息，包含关注数和粉丝数，字段 `IsFollow` 默认 false
 func (rs *Impl) GetRelationUser(ctx context.Context, userId int64) (pack.User, error) {
 	user := pack.User{Id: userId}
@@ -104,11 +121,7 @@ func (rs *Impl) GetRelationUser(ctx context.Context, userId int64) (pack.User, e
 	}
 	user.Name = username
 
-	user.FollowCount, err = rs.getFollowCount(ctx, user.Id)
-	if err != nil {
-		return user, err
-	}
-	user.FollowerCount, err = rs.getFollowerCount(ctx, user.Id)
+	err = rs.GetRelation(ctx, &user)
 	if err != nil {
 		return user, err
 	}
