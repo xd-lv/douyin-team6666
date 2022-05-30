@@ -10,7 +10,21 @@ import (
 	"time"
 )
 
-func Feed(ctx context.Context, latestTime string) ([]pack.Video, int64, error) {
+type IVideoService interface {
+	Feed(ctx context.Context, latestTime string) ([]pack.Video, int64, error)
+	PublishList(ctx context.Context, userId int64) ([]pack.Video, error)
+	Publish(ctx context.Context, file *multipart.FileHeader, title string, userId int64) error
+	GetVideoBody(videoId int64) (*pack.Video, error)
+}
+
+type Impl struct {
+}
+
+func NewVideoService() IVideoService {
+	return &Impl{}
+}
+
+func (vs *Impl) Feed(ctx context.Context, latestTime string) ([]pack.Video, int64, error) {
 	var res []pack.Video
 	var videos []*mysqldb.Video
 	var err error
@@ -34,7 +48,7 @@ func Feed(ctx context.Context, latestTime string) ([]pack.Video, int64, error) {
 	return res, 0, nil
 }
 
-func PublishList(ctx context.Context, userId int64) ([]pack.Video, error) {
+func (vs *Impl) PublishList(ctx context.Context, userId int64) ([]pack.Video, error) {
 	var res []pack.Video
 
 	videoRecordList, err := mysqldb.ListVideoByUserId(ctx, userId)
@@ -51,7 +65,7 @@ func PublishList(ctx context.Context, userId int64) ([]pack.Video, error) {
 	return res, nil
 }
 
-func Publish(ctx context.Context, file *multipart.FileHeader, title string, userId int64) error {
+func (vs *Impl) Publish(ctx context.Context, file *multipart.FileHeader, title string, userId int64) error {
 	user, err := mysqldb.GetUser(ctx, userId)
 	if err != nil {
 		return err
@@ -91,6 +105,10 @@ func Publish(ctx context.Context, file *multipart.FileHeader, title string, user
 	}
 
 	return nil
+}
+
+func (vs *Impl) GetVideoBody(videoId int64) (*pack.Video, error) {
+	return nil, nil
 }
 
 func upload(sfile *multipart.FileHeader, userName string, videoId int64, isCreateBucket bool) (string, string, error) {
