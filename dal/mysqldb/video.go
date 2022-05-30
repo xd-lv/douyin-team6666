@@ -50,7 +50,7 @@ func ListVideo(ctx context.Context) ([]*Video, error) {
 
 func ListVideoByLimit(ctx context.Context, latestTime string) ([]*Video, error) {
 	var res []*Video
-	if err := MysqlDB.WithContext(ctx).Where("create_timestamp <= ?", latestTime).Order("create_timestamp desc").Limit(constants.FeedLimit).Find(&res).Error; err != nil {
+	if err := MysqlDB.WithContext(ctx).Where("create_timestamp >= ?", latestTime).Order("create_timestamp desc").Limit(constants.FeedLimit).Find(&res).Error; err != nil {
 		return res, err
 	}
 	return res, nil

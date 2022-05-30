@@ -1,9 +1,10 @@
 package controller
 
 import (
+	"context"
 	"github.com/gin-gonic/gin"
 	"main/pack"
-	"main/service/userService"
+	"main/service"
 	"net/http"
 	"strconv"
 )
@@ -35,7 +36,7 @@ type UserResponse struct {
 func Register(c *gin.Context) {
 	username := c.Query("username")
 	password := c.Query("password")
-	token, userId, err := userService.RegisterService(username, password)
+	token, userId, err := service.UserService.RegisterService(username, password)
 	if err != nil {
 		c.JSON(http.StatusOK, pack.Response{
 			StatusCode: 1,
@@ -53,7 +54,7 @@ func Register(c *gin.Context) {
 func Login(c *gin.Context) {
 	username := c.Query("username")
 	password := c.Query("password")
-	token, userId, err := userService.LoginService(username, password)
+	token, userId, err := service.UserService.LoginService(username, password)
 	if err != nil {
 		c.JSON(http.StatusOK, pack.Response{
 			StatusCode: 1,
@@ -78,7 +79,10 @@ func UserInfo(c *gin.Context) {
 		})
 		return
 	}
-	user, err := userService.GetUserService(userId)
+
+	ctx := context.Background()
+
+	user, err := service.UserService.GetUserBody(ctx, userId)
 	if err != nil {
 		c.JSON(http.StatusOK, pack.Response{
 			StatusCode: 1,
@@ -86,15 +90,10 @@ func UserInfo(c *gin.Context) {
 		})
 		return
 	}
+
 	c.JSON(http.StatusOK, UserResponse{
 		Response: pack.Response{StatusCode: 0, StatusMsg: "success"},
-		User: pack.User{
-			Id:            user.Id,
-			Name:          user.UserName,
-			FollowCount:   0,
-			FollowerCount: 0,
-			IsFollow:      false,
-		},
+		User:     *user,
 	})
 	return
 }
