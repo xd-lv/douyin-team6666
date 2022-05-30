@@ -9,7 +9,7 @@ import (
 )
 
 type FeedResponse struct {
-	Response
+	pack.Response
 	VideoList []pack.Video `json:"video_list,omitempty"`
 	NextTime  int64        `json:"next_time,omitempty"`
 }
@@ -21,12 +21,12 @@ func Feed(c *gin.Context) {
 	videoList, nextTime, err := videoService.Feed(ctx, latestTime)
 	if err != nil {
 		c.JSON(http.StatusOK, FeedResponse{
-			Response: Response{StatusCode: 1, StatusMsg: err.Error()},
+			Response: pack.Response{StatusCode: 1, StatusMsg: err.Error()},
 		})
 		return
 	}
 	c.JSON(http.StatusOK, FeedResponse{
-		Response:  Response{StatusCode: 0},
+		Response:  pack.Response{StatusCode: 0},
 		VideoList: videoList,
 		NextTime:  nextTime,
 	})

@@ -5,17 +5,6 @@ import (
 	"main/dal/mysqldb"
 )
 
-type Video struct {
-	Id            int64
-	Title         string
-	Author        *User
-	PlayUrl       string
-	CoverUrl      string
-	FavoriteCount int64
-	CommentCount  int64
-	IsFavorite    bool
-}
-
 func WithVideo(videoID int64) Video {
 	return Video{
 		Id: videoID,
@@ -56,14 +45,13 @@ func (v *Video) getMysqlVideo(ctx context.Context) error {
 	v.CoverUrl = dbVideo.CoverUrl
 	v.PlayUrl = dbVideo.PlayUrl
 
-	// todo 发生循环引用，先注释了，待改动
-	// author := WithUser(dbVideo.Author)
-	// err = author.GetUser(ctx)
-	// if err != nil {
-	// 	 return err
-	// }
+	author := WithUser(dbVideo.Author)
+	err = author.GetUser(ctx)
+	if err != nil {
+		return err
+	}
 
-	// v.Author = author
+	v.Author = *author
 
 	return nil
 }

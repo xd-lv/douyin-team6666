@@ -12,7 +12,7 @@ import (
 )
 
 type VideoListResponse struct {
-	Response
+	pack.Response
 	VideoList []pack.Video `json:"video_list"`
 }
 
@@ -26,12 +26,12 @@ func Publish(c *gin.Context) {
 
 	claim, err := jwtUtil.AuthMiddleware.GetClaimsFromJWT(c)
 	if err != nil {
-		c.JSON(http.StatusOK, Response{StatusCode: 1, StatusMsg: "User doesn't exist"})
+		c.JSON(http.StatusOK, pack.Response{StatusCode: 1, StatusMsg: "User doesn't exist"})
 		return
 	}
 	userId, _ := strconv.ParseInt(claim[constants.IdentityKey].(string), 10, 64)
 	if err != nil {
-		c.JSON(http.StatusOK, Response{
+		c.JSON(http.StatusOK, pack.Response{
 			StatusCode: 1,
 			StatusMsg:  err.Error(),
 		})
@@ -40,7 +40,7 @@ func Publish(c *gin.Context) {
 
 	data, err := c.FormFile("data")
 	if err != nil {
-		c.JSON(http.StatusOK, Response{
+		c.JSON(http.StatusOK, pack.Response{
 			StatusCode: 1,
 			StatusMsg:  err.Error(),
 		})
@@ -51,13 +51,13 @@ func Publish(c *gin.Context) {
 
 	err = videoService.Publish(ctx, data, title, userId)
 	if err != nil {
-		c.JSON(http.StatusOK, Response{
+		c.JSON(http.StatusOK, pack.Response{
 			StatusCode: 1,
 			StatusMsg:  err.Error(),
 		})
 		return
 	}
-	c.JSON(http.StatusOK, Response{
+	c.JSON(http.StatusOK, pack.Response{
 		StatusCode: 0,
 		StatusMsg:  " uploaded successfully",
 	})
@@ -85,7 +85,7 @@ func PublishList(c *gin.Context) {
 
 	videoList, err := videoService.PublishList(ctx, userId)
 	if err != nil {
-		c.JSON(http.StatusOK, Response{
+		c.JSON(http.StatusOK, pack.Response{
 			StatusCode: 1,
 			StatusMsg:  err.Error(),
 		})
@@ -93,7 +93,7 @@ func PublishList(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, VideoListResponse{
-		Response: Response{
+		Response: pack.Response{
 			StatusCode: 0,
 		},
 		VideoList: videoList,
