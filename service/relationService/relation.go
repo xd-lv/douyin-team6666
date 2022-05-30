@@ -2,8 +2,8 @@ package relationService
 
 import (
 	"context"
-	"errors"
 	"github.com/go-redis/redis/v8"
+	"main/constants"
 	"main/dal/mysqldb"
 	"main/dal/redisdb"
 	"main/pack"
@@ -30,18 +30,28 @@ func NewRelationService() IRelationService {
 	return &Impl{}
 }
 
+// getFollowKey 获取 Redis 关注键
+func (rs *Impl) getFollowKey(userId int64) string {
+	return constants.FollowKeyPrefix + strconv.FormatInt(userId, 10)
+}
+
+// getFollowKey 获取 Redis 粉丝键
+func (rs *Impl) getFansKey(userId int64) string {
+	return constants.FansKeyPrefix + strconv.FormatInt(userId, 10)
+}
+
 // Follow 关注操作
 func (rs *Impl) Follow(ctx context.Context, userId int64, toUserId int64) error {
 	timestamp := float64(time.Now().Unix())
-	followKey := "follow_" + strconv.FormatInt(userId, 10)
-	fansKey := "fans_" + strconv.FormatInt(toUserId, 10)
+	followKey := rs.getFollowKey(userId)
+	fansKey := rs.getFansKey(toUserId)
 
 	pipe := rdb.TxPipeline()
 	pipe.ZAdd(ctx, followKey, &redis.Z{Score: timestamp, Member: toUserId})
 	pipe.ZAdd(ctx, fansKey, &redis.Z{Score: timestamp, Member: userId})
 	_, err := pipe.Exec(ctx)
 	if err != nil {
-		return errors.New("redis server error")
+		return constants.ErrRedisServer
 	}
 
 	return nil
@@ -49,15 +59,15 @@ func (rs *Impl) Follow(ctx context.Context, userId int64, toUserId int64) error 
 
 // CancelFollow 取消关注操作
 func (rs *Impl) CancelFollow(ctx context.Context, userId int64, toUserId int64) error {
-	followKey := "follow_" + strconv.FormatInt(userId, 10)
-	fansKey := "fans_" + strconv.FormatInt(toUserId, 10)
+	followKey := rs.getFollowKey(userId)
+	fansKey := rs.getFansKey(toUserId)
 
 	pipe := rdb.TxPipeline()
 	pipe.ZRem(ctx, followKey, toUserId)
 	pipe.ZRem(ctx, fansKey, userId)
 	_, err := pipe.Exec(ctx)
 	if err != nil {
-		return errors.New("redis server error")
+		return constants.ErrRedisServer
 	}
 
 	return nil
@@ -65,32 +75,32 @@ func (rs *Impl) CancelFollow(ctx context.Context, userId int64, toUserId int64) 
 
 // getFollowCount 获取关注数量
 func (rs *Impl) getFollowCount(ctx context.Context, userId int64) (int64, error) {
-	followKey := "follow_" + strconv.FormatInt(userId, 10)
+	followKey := rs.getFollowKey(userId)
 	followCount, err := rdb.ZCard(ctx, followKey).Result()
 	if err != nil {
-		return 0, errors.New("redis server error")
+		return 0, constants.ErrRedisServer
 	}
 	return followCount, nil
 }
 
 // getFollowerCount 获取粉丝数量
 func (rs *Impl) getFollowerCount(ctx context.Context, userId int64) (int64, error) {
-	fansKey := "fans_" + strconv.FormatInt(userId, 10)
+	fansKey := rs.getFansKey(userId)
 	followerCount, err := rdb.ZCard(ctx, fansKey).Result()
 	if err != nil {
-		return 0, errors.New("redis server error")
+		return 0, constants.ErrRedisServer
 	}
 	return followerCount, nil
 }
 
 // isAFollowB 判断用户A是否关注了用户B
 func (rs *Impl) isAFollowB(ctx context.Context, userAId int64, userBId int64) (bool, error) {
-	followKey := "follow_" + strconv.FormatInt(userAId, 10)
+	followKey := constants.FollowKeyPrefix + strconv.FormatInt(userAId, 10)
 	userBIdStr := strconv.FormatInt(userBId, 10)
 	if err := rdb.ZRank(ctx, followKey, userBIdStr).Err(); err == redis.Nil {
 		return false, nil
 	} else if err != nil {
-		return false, errors.New("redis server error")
+		return false, constants.ErrRedisServer
 	}
 	return true, nil
 }
@@ -147,11 +157,11 @@ func (rs *Impl) GetRelationAuthor(ctx context.Context, authorId int64, userId in
 // GetFollowList 获取关注列表
 func (rs *Impl) GetFollowList(ctx context.Context, userId int64) ([]pack.User, error) {
 	users := make([]pack.User, 0)
-	followKey := "follow_" + strconv.FormatInt(userId, 10)
+	followKey := rs.getFollowKey(userId)
 
 	res, err := rdb.ZRevRange(ctx, followKey, 0, -1).Result()
 	if err != nil {
-		return users, errors.New("redis server error")
+		return users, constants.ErrRedisServer
 	}
 
 	for _, idStr := range res {
@@ -169,11 +179,11 @@ func (rs *Impl) GetFollowList(ctx context.Context, userId int64) ([]pack.User, e
 // GetFollowerList 获取粉丝列表
 func (rs *Impl) GetFollowerList(ctx context.Context, userId int64) ([]pack.User, error) {
 	users := make([]pack.User, 0)
-	fansKey := "fans_" + strconv.FormatInt(userId, 10)
+	fansKey := rs.getFansKey(userId)
 
 	res, err := rdb.ZRevRange(ctx, fansKey, 0, -1).Result()
 	if err != nil {
-		return users, errors.New("redis server error")
+		return users, constants.ErrRedisServer
 	}
 
 	for _, idStr := range res {
