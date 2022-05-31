@@ -11,6 +11,7 @@ import (
 */
 
 var RDB *redis.Client
+var RDBComment *redis.Client
 
 func init() {
 	opt, err := redis.ParseURL(constants.RedisDefaultDSN)
@@ -18,4 +19,10 @@ func init() {
 		panic(err)
 	}
 	RDB = redis.NewClient(opt)
+
+	opt, err = redis.ParseURL(constants.RedisDefaultDSN + constants.RedisCommentNumDSN)
+	if err != nil {
+		panic(err)
+	}
+	RDBComment = redis.NewClient(opt)
 }
