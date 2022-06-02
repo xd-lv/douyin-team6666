@@ -20,7 +20,7 @@ var rdbComment = redisdb.RDBComment
 var rdbRelation = redisdb.RDB
 
 type ICommentService interface {
-	CreateComment(ctx context.Context, videoId int64, userId int64, commentText string) error
+	CreateComment(ctx context.Context, videoId int64, userId int64, commentText string) (pack.Comment, error)
 	DeleteComment(ctx context.Context, videoId int64, commentId int64) error
 	ListComment(ctx context.Context, videoId int64) ([]pack.Comment, error)
 }
@@ -33,12 +33,14 @@ func NewCommentService() ICommentService {
 }
 
 // Comment 评论插入操作
-func (comment *Impl) CreateComment(ctx context.Context, videoId int64, userId int64, commentText string) error {
-	timestamp := strconv.FormatInt(time.Now().Unix(), 10)
-	commentIdStr := strconv.FormatInt(snowflakeUtil.NewId(), 10)
+func (comment *Impl) CreateComment(ctx context.Context, videoId int64, userId int64, commentText string) (pack.Comment, error) {
+	timestamp := time.Now().Unix()
+	timestampStr := strconv.FormatInt(timestamp, 10)
+	commentId := snowflakeUtil.NewId()
+	commentIdStr := strconv.FormatInt(commentId, 10)
 	userIDStr := strconv.FormatInt(userId, 10)
 
-	commentIdAndText := fmt.Sprintf("%s+%s+%s+%s", commentIdStr, timestamp, userIDStr, commentText)
+	commentIdAndText := fmt.Sprintf("%s+%s+%s+%s", commentIdStr, timestampStr, userIDStr, commentText)
 
 	fmt.Println(commentIdAndText)
 	videoIdStr := strconv.FormatInt(videoId, 10)
@@ -49,9 +51,28 @@ func (comment *Impl) CreateComment(ctx context.Context, videoId int64, userId in
 
 	_, err := pipe.Exec(ctx)
 	if err != nil {
-		return errors.New("redis server error. Method: CreateComment")
+		return pack.Comment{}, errors.New("redis server error. Method: CreateComment, exec")
 	}
-	return nil
+
+	video, err := mysqldb.GetVideo(ctx, videoId)
+	if err != nil {
+		return pack.Comment{}, errors.New("redis server error. Method: CreateComment, video")
+	}
+
+	user, err := comment.GetRelationAuthor(ctx, video.Author, userId)
+
+	if err != nil {
+		return pack.Comment{}, errors.New("redis server error. Method: CreateComment, user")
+	}
+
+	timeStampStrData := time.Unix(timestamp, 0).Format("01/02")
+
+	return pack.Comment{
+		Id:         commentId,
+		User:       user,
+		Content:    commentText,
+		CreateDate: timeStampStrData,
+	}, nil
 }
 
 // 评论删除操作
@@ -66,7 +87,6 @@ func (comment *Impl) DeleteComment(ctx context.Context, videoId int64, commentId
 
 	for _, tempCommentStr := range resultComment {
 		strSplit := strings.SplitN(tempCommentStr, "+", 4)
-		fmt.Println(strSplit[0])
 		if strings.Compare(strSplit[0], commentIdStr) == 0 {
 			commentIdStr = tempCommentStr
 			break
