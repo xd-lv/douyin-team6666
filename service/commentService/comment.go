@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/go-redis/redis/v8"
 	"main/dal/mysqldb"
 	"main/dal/redisdb"
 	"main/pack"
+	"main/service/relationService"
+
 	//"main/service"
 
 	"main/utils/snowflakeUtil"
@@ -17,7 +18,6 @@ import (
 )
 
 var rdbComment = redisdb.RDBComment
-var rdbRelation = redisdb.RDB
 
 type ICommentService interface {
 	CreateComment(ctx context.Context, videoId int64, userId int64, commentText string) (pack.Comment, error)
@@ -26,10 +26,13 @@ type ICommentService interface {
 }
 
 type Impl struct {
+	relationService relationService.IRelationService
 }
 
 func NewCommentService() ICommentService {
-	return &Impl{}
+	return &Impl{
+		relationService: relationService.NewRelationService(),
+	}
 }
 
 // Comment 评论插入操作
@@ -42,7 +45,6 @@ func (comment *Impl) CreateComment(ctx context.Context, videoId int64, userId in
 
 	commentIdAndText := fmt.Sprintf("%s+%s+%s+%s", commentIdStr, timestampStr, userIDStr, commentText)
 
-	fmt.Println(commentIdAndText)
 	videoIdStr := strconv.FormatInt(videoId, 10)
 
 	pipe := rdbComment.TxPipeline()
@@ -51,15 +53,18 @@ func (comment *Impl) CreateComment(ctx context.Context, videoId int64, userId in
 
 	_, err := pipe.Exec(ctx)
 	if err != nil {
+		fmt.Println("redis server error. Method: CreateComment, exec")
 		return pack.Comment{}, errors.New("redis server error. Method: CreateComment, exec")
 	}
 
 	video, err := mysqldb.GetVideo(ctx, videoId)
+
 	if err != nil {
+		fmt.Println("redis server error. Method: CreateComment, video")
 		return pack.Comment{}, errors.New("redis server error. Method: CreateComment, video")
 	}
 
-	user, err := comment.GetRelationAuthor(ctx, video.Author, userId)
+	user, err := comment.relationService.GetRelationAuthor(ctx, video.Author, userId)
 
 	if err != nil {
 		return pack.Comment{}, errors.New("redis server error. Method: CreateComment, user")
@@ -123,7 +128,7 @@ func (comment *Impl) ListComment(ctx context.Context, videoId int64) ([]pack.Com
 		tempTimeStamp, _ := strconv.ParseInt(strSplit[1], 10, 64)
 		tempUserId, _ := strconv.ParseInt(strSplit[2], 10, 64)
 
-		tempUser, err := comment.GetRelationAuthor(ctx, video.Author, tempUserId)
+		tempUser, err := comment.relationService.GetRelationAuthor(ctx, video.Author, tempUserId)
 
 		if err != nil {
 			return []pack.Comment{}, err
@@ -140,73 +145,4 @@ func (comment *Impl) ListComment(ctx context.Context, videoId int64) ([]pack.Com
 		comments = append(comments, tempComment)
 	}
 	return comments, nil
-}
-
-// GetRelationAuthor 获取 `作者`(视频作者、评论作者等) 的关系信息，其中还包含 `用户` 对 `作者` 的关注情况
-func (comment *Impl) GetRelationAuthor(ctx context.Context, authorId int64, userId int64) (pack.User, error) {
-	user, err := comment.GetRelationUser(ctx, authorId)
-	if err != nil {
-		return user, err
-	}
-
-	user.IsFollow, err = comment.isAFollowB(ctx, userId, authorId)
-	if err != nil {
-		return user, err
-	}
-
-	return user, nil
-}
-
-// GetRelationUser 获取 `用户`(登录用户|操作人) 的关系信息，包含关注数和粉丝数，字段 `IsFollow` 默认 false
-func (comment *Impl) GetRelationUser(ctx context.Context, userId int64) (pack.User, error) {
-	user := pack.User{Id: userId}
-
-	username, err := mysqldb.GetUserNameByID(ctx, user.Id)
-	if err != nil {
-		return user, err
-	}
-	user.Name = username
-
-	user.FollowCount, err = comment.getFollowCount(ctx, user.Id)
-	if err != nil {
-		return user, err
-	}
-	user.FollowerCount, err = comment.getFollowerCount(ctx, user.Id)
-	if err != nil {
-		return user, err
-	}
-
-	return user, nil
-}
-
-// getFollowCount 获取关注数量
-func (comment *Impl) getFollowCount(ctx context.Context, userId int64) (int64, error) {
-	followKey := "follow_" + strconv.FormatInt(userId, 10)
-	followCount, err := rdbRelation.ZCard(ctx, followKey).Result()
-	if err != nil {
-		return 0, errors.New("redis server error")
-	}
-	return followCount, nil
-}
-
-// getFollowerCount 获取粉丝数量
-func (comment *Impl) getFollowerCount(ctx context.Context, userId int64) (int64, error) {
-	fansKey := "fans_" + strconv.FormatInt(userId, 10)
-	followerCount, err := rdbRelation.ZCard(ctx, fansKey).Result()
-	if err != nil {
-		return 0, errors.New("redis server error")
-	}
-	return followerCount, nil
-}
-
-// isAFollowB 判断用户A是否关注了用户B
-func (comment *Impl) isAFollowB(ctx context.Context, userAId int64, userBId int64) (bool, error) {
-	followKey := "follow_" + strconv.FormatInt(userAId, 10)
-	userBIdStr := strconv.FormatInt(userBId, 10)
-	if err := rdbRelation.ZRank(ctx, followKey, userBIdStr).Err(); err == redis.Nil {
-		return false, nil
-	} else if err != nil {
-		return false, errors.New("redis server error")
-	}
-	return true, nil
 }
