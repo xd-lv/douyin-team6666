@@ -5,12 +5,56 @@ import (
 	"main/dal/miniodb"
 	"main/dal/mysqldb"
 	"main/pack"
+	"main/service/userService"
 	"mime/multipart"
 	"strconv"
 	"time"
 )
 
-func PublishList(ctx context.Context, userId int64) ([]pack.Video, error) {
+type IVideoService interface {
+	Feed(ctx context.Context, latestTime string) ([]pack.Video, int64, error)
+	PublishList(ctx context.Context, userId int64) ([]pack.Video, error)
+	Publish(ctx context.Context, file *multipart.FileHeader, title string, userId int64) error
+	GetVideoBody(ctx context.Context, videoId int64) (*pack.Video, error)
+}
+
+type Impl struct {
+	userService userService.IUserService
+}
+
+func NewVideoService() IVideoService {
+	return &Impl{
+		userService: userService.NewUserService(),
+	}
+}
+
+func (vs *Impl) Feed(ctx context.Context, latestTime string) ([]pack.Video, int64, error) {
+	var res []pack.Video
+	var videos []*mysqldb.Video
+	var err error
+	if latestTime == "" {
+		videos, err = mysqldb.ListVideo(ctx)
+		if err != nil {
+			return nil, 0, err
+		}
+	} else {
+		videos, err = mysqldb.ListVideoByLimit(ctx, latestTime)
+		if err != nil {
+			return nil, 0, err
+		}
+	}
+
+	for _, video := range videos {
+		v, err := vs.GetVideoBody(ctx, video.Id)
+		if err != nil {
+			return nil, 0, err
+		}
+		res = append(res, *v)
+	}
+	return res, 0, nil
+}
+
+func (vs *Impl) PublishList(ctx context.Context, userId int64) ([]pack.Video, error) {
 	var res []pack.Video
 
 	videoRecordList, err := mysqldb.ListVideoByUserId(ctx, userId)
@@ -19,15 +63,17 @@ func PublishList(ctx context.Context, userId int64) ([]pack.Video, error) {
 	}
 
 	for _, v := range videoRecordList {
-		video := pack.WithVideo(v.Id)
-		video.GetVideo(ctx)
-		res = append(res, video)
+		video, err := vs.GetVideoBody(ctx, v.Id)
+		if err != nil {
+			return nil, err
+		}
+		res = append(res, *video)
 	}
 
 	return res, nil
 }
 
-func Publish(ctx context.Context, file *multipart.FileHeader, title string, userId int64) error {
+func (vs *Impl) Publish(ctx context.Context, file *multipart.FileHeader, title string, userId int64) error {
 	user, err := mysqldb.GetUser(ctx, userId)
 	if err != nil {
 		return err
@@ -38,7 +84,7 @@ func Publish(ctx context.Context, file *multipart.FileHeader, title string, user
 		PlayUrl:         "",
 		CoverUrl:        "",
 		Title:           title,
-		CreateTimestamp: time.Now(),
+		CreateTimestamp: time.Now().Format("2006-01-02 15:04:05"),
 	}
 
 	videoRecord, err = mysqldb.CreateVideo(ctx, videoRecord)
@@ -46,17 +92,10 @@ func Publish(ctx context.Context, file *multipart.FileHeader, title string, user
 		return err
 	}
 
-	videos, err := mysqldb.ListVideoByUserId(ctx, userId)
-	if err != nil {
-		return err
-	}
-
 	var purl, curl string
-	if len(videos) == 0 {
-		purl, curl, err = upload(file, user.UserName, videoRecord.Id, false)
-	} else {
-		purl, curl, err = upload(file, user.UserName, videoRecord.Id, true)
-	}
+
+	purl, curl, err = upload(file, user.UserName, videoRecord.Id)
+
 	if err != nil {
 		return err
 	}
@@ -69,7 +108,49 @@ func Publish(ctx context.Context, file *multipart.FileHeader, title string, user
 	return nil
 }
 
-func upload(sfile *multipart.FileHeader, userName string, videoId int64, isCreateBucket bool) (string, string, error) {
+func (vs *Impl) GetVideoBody(ctx context.Context, videoId int64) (*pack.Video, error) {
+	res := &pack.Video{
+		Id: videoId,
+	}
+
+	authorId, err := vs.getMysqlVideo(ctx, res)
+	if err != nil {
+		return res, err
+	}
+
+	author, err := vs.userService.GetUserBody(ctx, authorId)
+	if err != nil {
+		return res, err
+	}
+
+	// TODO comment&favorite
+
+	res.Author = *author
+	return res, nil
+}
+
+func (vs *Impl) getMysqlVideo(ctx context.Context, videoBody *pack.Video) (int64, error) {
+
+	dbVideo, err := mysqldb.GetVideo(ctx, videoBody.Id)
+	if err != nil {
+		return dbVideo.Author, err
+	}
+
+	videoBody.Title = dbVideo.Title
+	videoBody.CoverUrl = dbVideo.CoverUrl
+	videoBody.PlayUrl = dbVideo.PlayUrl
+
+	author, err := vs.userService.GetUserBody(ctx, dbVideo.Author)
+	if err != nil {
+		return dbVideo.Author, err
+	}
+
+	videoBody.Author = *author
+
+	return dbVideo.Author, nil
+}
+
+func upload(sfile *multipart.FileHeader, userName string, videoId int64) (string, string, error) {
 	var purl, curl string
 	var bucketName = userName + "bucket"
 	file, err := sfile.Open()
@@ -77,7 +158,9 @@ func upload(sfile *multipart.FileHeader, userName string, videoId int64, isCreat
 		return purl, curl, err
 	}
 
-	if isCreateBucket {
+	exists := miniodb.IsExists(bucketName)
+
+	if !exists {
 		// 需要创建bucket
 		err := miniodb.Create(bucketName)
 		if err != nil {
@@ -86,6 +169,7 @@ func upload(sfile *multipart.FileHeader, userName string, videoId int64, isCreat
 	}
 	purl, err = miniodb.Upload(file, bucketName, strconv.FormatInt(videoId, 10)+"-play", sfile.Size)
 	if err != nil {
+
 		return purl, curl, err
 	}
 	// TODO cover 截取

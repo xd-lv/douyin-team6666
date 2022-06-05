@@ -6,6 +6,6 @@ var DemoVideos = []pack.Video{
 	{},
 }
 
-var DemoComments = []Comment{
+var DemoComments = []pack.Comment{
 	{},
 }

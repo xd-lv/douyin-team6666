@@ -2,6 +2,7 @@ package controller
 
 import (
 	"github.com/gin-gonic/gin"
+	"main/constants"
 	"main/pack"
 	"main/service"
 	"net/http"
@@ -9,7 +10,7 @@ import (
 )
 
 type UserListResponse struct {
-	Response
+	pack.Response
 	UserList []pack.User `json:"user_list"`
 }
 
@@ -19,37 +20,32 @@ type ActionRequest struct {
 	Type  int32 `form:"action_type" json:"action_type" binding:"required"`
 }
 
-const (
-	ActionFollow       = 1
-	ActionCancelFollow = 2
-)
-
 // RelationAction 关注与取消关注
 func RelationAction(c *gin.Context) {
 	action := ActionRequest{}
 	err := c.BindQuery(&action)
 	if err != nil {
-		c.JSON(http.StatusOK, Response{StatusCode: 1, StatusMsg: "Input parameter error"})
+		c.JSON(http.StatusOK, pack.Response{StatusCode: 1, StatusMsg: constants.ErrInvalidParams.Error()})
 		return
 	}
 
-	if action.Type == ActionFollow {
+	if action.Type == constants.ActionFollow {
 		err := service.RelationService.Follow(c, action.Uid, action.ToUid)
 		if err != nil {
-			c.JSON(http.StatusOK, Response{StatusCode: 2, StatusMsg: err.Error()})
+			c.JSON(http.StatusOK, pack.Response{StatusCode: 2, StatusMsg: err.Error()})
 			return
 		}
-	} else if action.Type == ActionCancelFollow {
+	} else if action.Type == constants.ActionCancelFollow {
 		err := service.RelationService.CancelFollow(c, action.Uid, action.ToUid)
 		if err != nil {
-			c.JSON(http.StatusOK, Response{StatusCode: 2, StatusMsg: err.Error()})
+			c.JSON(http.StatusOK, pack.Response{StatusCode: 2, StatusMsg: err.Error()})
 			return
 		}
 	} else {
-		c.JSON(http.StatusOK, Response{StatusCode: 1, StatusMsg: "parameter 'action_type' error"})
+		c.JSON(http.StatusOK, pack.Response{StatusCode: 1, StatusMsg: constants.ErrInvalidParams.Error()})
 	}
 
-	c.JSON(http.StatusOK, Response{StatusCode: 0})
+	c.JSON(http.StatusOK, pack.Response{StatusCode: 0})
 }
 
 // FollowList 关注列表
@@ -57,9 +53,9 @@ func FollowList(c *gin.Context) {
 	uid, err := strconv.ParseInt(c.Query("user_id"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusOK, UserListResponse{
-			Response: Response{
+			Response: pack.Response{
 				StatusCode: 1,
-				StatusMsg:  "Input parameter error",
+				StatusMsg:  constants.ErrInvalidParams.Error(),
 			},
 		})
 		return
@@ -68,7 +64,7 @@ func FollowList(c *gin.Context) {
 	users, err := service.RelationService.GetFollowList(c, uid)
 	if err != nil {
 		c.JSON(http.StatusOK, UserListResponse{
-			Response: Response{
+			Response: pack.Response{
 				StatusCode: 2,
 				StatusMsg:  err.Error(),
 			},
@@ -77,7 +73,7 @@ func FollowList(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, UserListResponse{
-		Response: Response{
+		Response: pack.Response{
 			StatusCode: 0,
 		},
 		UserList: users,
@@ -89,9 +85,9 @@ func FollowerList(c *gin.Context) {
 	uid, err := strconv.ParseInt(c.Query("user_id"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusOK, UserListResponse{
-			Response: Response{
+			Response: pack.Response{
 				StatusCode: 1,
-				StatusMsg:  "Input parameter error",
+				StatusMsg:  constants.ErrInvalidParams.Error(),
 			},
 		})
 		return
@@ -100,7 +96,7 @@ func FollowerList(c *gin.Context) {
 	users, err := service.RelationService.GetFollowerList(c, uid)
 	if err != nil {
 		c.JSON(http.StatusOK, UserListResponse{
-			Response: Response{
+			Response: pack.Response{
 				StatusCode: 2,
 				StatusMsg:  err.Error(),
 			},
@@ -109,7 +105,7 @@ func FollowerList(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, UserListResponse{
-		Response: Response{
+		Response: pack.Response{
 			StatusCode: 0,
 		},
 		UserList: users,

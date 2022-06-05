@@ -2,17 +2,18 @@ package mysqldb
 
 import (
 	"context"
+	"fmt"
 	"main/constants"
 	"time"
 )
 
 type Video struct {
-	Id              int64     `json:"video_id"`
-	Author          int64     `json:"author_id"`
-	PlayUrl         string    `json:"play_url"`
-	CoverUrl        string    `json:"cover_url"`
-	Title           string    `json:"title"`
-	CreateTimestamp time.Time `json:"create_timestamp"`
+	Id              int64  `json:"video_id"`
+	Author          int64  `json:"author_id"`
+	PlayUrl         string `json:"play_url"`
+	CoverUrl        string `json:"cover_url"`
+	Title           string `json:"title"`
+	CreateTimestamp string `json:"create_timestamp"`
 }
 
 func (u *Video) TableName() string {
@@ -21,7 +22,8 @@ func (u *Video) TableName() string {
 
 // CreateVideo create video info
 func CreateVideo(ctx context.Context, video *Video) (*Video, error) {
-	video.CreateTimestamp = time.Now()
+	video.CreateTimestamp = time.Now().Format("2006-01-02 15:04:05")
+	fmt.Println(video.Author)
 	if err := MysqlDB.WithContext(ctx).Create(video).Error; err != nil {
 		return video, err
 	}
@@ -40,8 +42,15 @@ func GetVideo(ctx context.Context, videoID int64) (*Video, error) {
 // ListVideo list all videos info
 func ListVideo(ctx context.Context) ([]*Video, error) {
 	var res []*Video
+	if err := MysqlDB.WithContext(ctx).Order("create_timestamp desc").Limit(constants.FeedLimit).Find(&res).Error; err != nil {
+		return res, err
+	}
+	return res, nil
+}
 
-	if err := MysqlDB.WithContext(ctx).Order("create_timestamp desc").Find(&res).Error; err != nil {
+func ListVideoByLimit(ctx context.Context, latestTime string) ([]*Video, error) {
+	var res []*Video
+	if err := MysqlDB.WithContext(ctx).Where("create_timestamp >= ?", latestTime).Order("create_timestamp desc").Limit(constants.FeedLimit).Find(&res).Error; err != nil {
 		return res, err
 	}
 	return res, nil

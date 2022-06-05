@@ -2,7 +2,6 @@ package mysqldb
 
 import (
 	"context"
-	"errors"
 	"main/constants"
 )
 
@@ -68,7 +67,7 @@ func GetUserByUserName(ctx context.Context, userName string) (*UserInfo, error) 
 func GetUserNameByID(ctx context.Context, userID int64) (string, error) {
 	var user UserInfo
 	if err := MysqlDB.WithContext(ctx).Select("user_name").First(&user, userID).Error; err != nil {
-		return "", errors.New("mysql server error")
+		return "", constants.ErrMysqlServer
 	}
 	return user.UserName, nil
 }
