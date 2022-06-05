@@ -14,3 +14,8 @@ const (
 	ActionPublishComment = 1 //发布评论
 	ActionDeleteComment  = 2 //删除评论
 )
+
+const (
+	ActionLike   = 1 // 点赞
+	ActionUnlike = 2 // 取消点赞
+)

@@ -5,6 +5,7 @@ import (
 	"main/dal/miniodb"
 	"main/dal/mysqldb"
 	"main/pack"
+	"main/service/favoriteService"
 	"main/service/userService"
 	"mime/multipart"
 	"strconv"
@@ -19,12 +20,14 @@ type IVideoService interface {
 }
 
 type Impl struct {
-	userService userService.IUserService
+	userService     userService.IUserService
+	favoriteService favoriteService.IFavoriteService
 }
 
 func NewVideoService() IVideoService {
 	return &Impl{
-		userService: userService.NewUserService(),
+		userService:     userService.NewUserService(),
+		favoriteService: favoriteService.NewIFavoriteService(),
 	}
 }
 
@@ -122,10 +125,12 @@ func (vs *Impl) GetVideoBody(ctx context.Context, videoId int64) (*pack.Video, e
 	if err != nil {
 		return res, err
 	}
+	res.Author = *author
 
 	// TODO comment&favorite
+	fCount, err := vs.favoriteService.GetFavoriteCount(ctx, videoId)
+	res.FavoriteCount = fCount
 
-	res.Author = *author
 	return res, nil
 }
 
