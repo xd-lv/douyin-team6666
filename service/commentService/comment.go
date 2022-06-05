@@ -23,6 +23,7 @@ type ICommentService interface {
 	CreateComment(ctx context.Context, videoId int64, userId int64, commentText string) (pack.Comment, error)
 	DeleteComment(ctx context.Context, videoId int64, commentId int64) error
 	ListComment(ctx context.Context, videoId int64) ([]pack.Comment, error)
+	CountComment(ctx context.Context, videoId int64) (int64, error)
 }
 
 type Impl struct {
@@ -145,4 +146,11 @@ func (comment *Impl) ListComment(ctx context.Context, videoId int64) ([]pack.Com
 		comments = append(comments, tempComment)
 	}
 	return comments, nil
+}
+
+//评论数量
+func (comment *Impl) CountComment(ctx context.Context, videoId int64) (int64, error) {
+	videoIdStr := strconv.FormatInt(videoId, 10)
+	card := rdbComment.LLen(ctx, videoIdStr)
+	return card.Result()
 }

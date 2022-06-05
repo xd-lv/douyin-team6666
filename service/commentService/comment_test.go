@@ -8,15 +8,17 @@ import (
 )
 
 func TestImpl_CreateComment(t *testing.T) {
+	mysqldb.Init()
 	service := NewCommentService()
 	ctx := context.Background()
 	str := "饿了饿啊啊啊啊啊啊啊啊"
-	err := service.CreateComment(ctx, 1, 536614587361923072, str)
+	comment, err := service.CreateComment(ctx, 1, 536614587361923072, str)
 	if err != nil {
 		println(err.Error())
 		return
 	}
 	println("ok")
+	fmt.Println(comment)
 }
 
 func TestImpl_ListComment(t *testing.T) {
@@ -49,6 +51,17 @@ func TestImpl_DeleteComment(t *testing.T) {
 		fmt.Println(p.Id, p.User, p.Content, p.CreateDate)
 	}
 	println("ok")
+}
+
+func TestImpl_CountComment(t *testing.T) {
+	service := NewCommentService()
+	background := context.Background()
+	comment, err := service.CountComment(background, 1)
+	fmt.Println(comment)
+	if err != nil {
+		return
+	}
+
 }
 
 /*
