@@ -65,15 +65,19 @@ func ListVideoByUserId(ctx context.Context, userId int64) ([]*Video, error) {
 	return res, nil
 }
 
-// UpdateVideo update video info
-// not need
-func UpdateVideoUrl(ctx context.Context, videoID int64, playUrl string, coverUrl string) error {
+// UpdateVideo update video play url info
+func UpdateVideoPUrl(ctx context.Context, videoID int64, playUrl string) error {
 	err := MysqlDB.WithContext(ctx).Model(&Video{}).Where("id = ?", videoID).Update("play_url", playUrl)
 	if err != nil {
 		return err.Error
 	}
 
-	err = MysqlDB.WithContext(ctx).Model(&Video{}).Where("id = ?", videoID).Update("cover_url", coverUrl)
+	return nil
+}
+
+// UpdateVideo update video cover url info
+func UpdateVideoCUrl(ctx context.Context, videoID int64, coverUrl string) error {
+	err := MysqlDB.WithContext(ctx).Model(&Video{}).Where("id = ?", videoID).Update("cover_url", coverUrl)
 	if err != nil {
 		return err.Error
 	}

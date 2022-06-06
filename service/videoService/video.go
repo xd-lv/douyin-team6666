@@ -1,12 +1,17 @@
 package videoService
 
 import (
+	"bytes"
 	"context"
+	"fmt"
+	ffmpeg "github.com/u2takey/ffmpeg-go"
 	"main/dal/miniodb"
 	"main/dal/mysqldb"
 	"main/pack"
+	"main/service/commentService"
 	"main/service/userService"
 	"mime/multipart"
+	"os"
 	"strconv"
 	"time"
 )
@@ -19,12 +24,14 @@ type IVideoService interface {
 }
 
 type Impl struct {
-	userService userService.IUserService
+	userService    userService.IUserService
+	commentService commentService.ICommentService
 }
 
 func NewVideoService() IVideoService {
 	return &Impl{
-		userService: userService.NewUserService(),
+		userService:    userService.NewUserService(),
+		commentService: commentService.NewCommentService(),
 	}
 }
 
@@ -100,7 +107,11 @@ func (vs *Impl) Publish(ctx context.Context, file *multipart.FileHeader, title s
 		return err
 	}
 
-	err = mysqldb.UpdateVideoUrl(ctx, videoRecord.Id, purl, curl)
+	err = mysqldb.UpdateVideoPUrl(ctx, videoRecord.Id, purl)
+	if err != nil {
+		return err
+	}
+	err = mysqldb.UpdateVideoCUrl(ctx, videoRecord.Id, curl)
 	if err != nil {
 		return err
 	}
@@ -123,7 +134,12 @@ func (vs *Impl) GetVideoBody(ctx context.Context, videoId int64) (*pack.Video, e
 		return res, err
 	}
 
-	// TODO comment&favorite
+	// TODO favorite
+
+	res.CommentCount, err = vs.commentService.CountComment(ctx, videoId)
+	if err != nil {
+		return res, err
+	}
 
 	res.Author = *author
 	return res, nil
@@ -151,9 +167,11 @@ func (vs *Impl) getMysqlVideo(ctx context.Context, videoBody *pack.Video) (int64
 }
 
 func upload(sfile *multipart.FileHeader, userName string, videoId int64) (string, string, error) {
+
 	var purl, curl string
 	var bucketName = userName + "bucket"
 	file, err := sfile.Open()
+	miniodb.Test(bucketName)
 	if err != nil {
 		return purl, curl, err
 	}
@@ -167,11 +185,25 @@ func upload(sfile *multipart.FileHeader, userName string, videoId int64) (string
 			return purl, curl, err
 		}
 	}
-	purl, err = miniodb.Upload(file, bucketName, strconv.FormatInt(videoId, 10)+"-play", sfile.Size)
+	purl, err = miniodb.Upload(file, bucketName, strconv.FormatInt(videoId, 10)+"-play.mp4", sfile.Size)
 	if err != nil {
 
 		return purl, curl, err
 	}
-	// TODO cover 截取
+	// 截取cover
+	reader := bytes.NewBuffer(nil)
+	err = ffmpeg.Input(purl).
+		Filter("select", ffmpeg.Args{fmt.Sprintf("gte(n,%d)", 5)}).
+		Output("pipe:", ffmpeg.KwArgs{"vframes": 1, "format": "image2", "vcodec": "mjpeg"}).
+		WithOutput(reader, os.Stdout).
+		Run()
+	if err != nil {
+		return purl, curl, err
+	}
+	curl, err = miniodb.Upload(reader, bucketName, strconv.FormatInt(videoId, 10)+"-cover.jpeg", int64(reader.Len()))
+	if err != nil {
+		return purl, curl, err
+	}
+
 	return purl, curl, nil
 }
