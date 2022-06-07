@@ -8,6 +8,7 @@ import (
 	"main/utils/jwtUtil"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 type CommentActionRequest struct {
@@ -30,7 +31,16 @@ func CommentAction(c *gin.Context) {
 	commentAction := CommentActionRequest{}
 	var err error
 	commentAction.CommentId, err = strconv.ParseInt(c.Query("comment_id"), 10, 64)
-	commentAction.CommentText = c.Query("comment_text")
+	commentAction.CommentText = strings.TrimSpace(c.Query("comment_text"))
+	if commentAction.CommentText == "" {
+		if err != nil {
+			c.JSON(http.StatusOK, CommentActionResponse{
+				Response: pack.Response{StatusCode: 1, StatusMsg: "空格无效！"},
+				Comment:  pack.Comment{},
+			})
+			return
+		}
+	}
 	tempActionType, err := strconv.ParseInt(c.Query("action_type"), 10, 64)
 	commentAction.ActionType = int32(tempActionType)
 	commentAction.VideoId, err = strconv.ParseInt(c.Query("video_id"), 10, 64)
