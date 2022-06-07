@@ -28,21 +28,17 @@ type CommentActionResponse struct {
 func CommentAction(c *gin.Context) {
 
 	commentAction := CommentActionRequest{}
-
-	err := c.BindJSON(&commentAction)
+	var err error
+	commentAction.CommentId, err = strconv.ParseInt(c.Query("comment_id"), 10, 64)
+	commentAction.CommentText = c.Query("comment_text")
+	tempActionType, err := strconv.ParseInt(c.Query("action_type"), 10, 64)
+	commentAction.ActionType = int32(tempActionType)
+	commentAction.VideoId, err = strconv.ParseInt(c.Query("video_id"), 10, 64)
 
 	if err != nil {
 		c.JSON(http.StatusOK, CommentActionResponse{
 			Response: pack.Response{StatusCode: 1, StatusMsg: err.Error()},
 			Comment:  pack.Comment{},
-		})
-		return
-	}
-
-	commentAction.UserId, err = strconv.ParseInt(c.Query("user_id"), 10, 64)
-	if err != nil {
-		c.JSON(http.StatusOK, pack.Response{
-			StatusCode: 1, StatusMsg: "User doesn't exist",
 		})
 		return
 	}
@@ -56,15 +52,15 @@ func CommentAction(c *gin.Context) {
 	}
 	userId, err := strconv.ParseInt(claim[constants.IdentityKey].(string), 10, 64)
 
-	if err != nil || userId != commentAction.UserId {
+	if err != nil {
 		c.JSON(http.StatusOK, pack.Response{
 			StatusCode: 1, StatusMsg: "User doesn't exist~~~~" + strconv.FormatInt(userId, 10) + " " + strconv.FormatInt(commentAction.UserId, 10),
 		})
 		return
 	}
+	commentAction.UserId = userId
 
 	commentAction.Token = c.Query("token")
-
 	if commentAction.ActionType == constants.ActionPublishComment {
 		comment, err := service.CommentService.CreateComment(c, commentAction.VideoId, commentAction.UserId, commentAction.CommentText)
 
@@ -100,18 +96,11 @@ func CommentAction(c *gin.Context) {
 		return
 	}
 
-	//token := c.Query("token")
-	//
-	//if _, exist := usersLoginInfo[token]; exist {
-	//	c.JSON(http.StatusOK, pack.Response{StatusCode: 0})
-	//} else {
-	//	c.JSON(http.StatusOK, pack.Response{StatusCode: 1, StatusMsg: "User doesn't exist"})
-	//}
 }
 
 type CommentListResponse struct {
 	pack.Response
-	CommentList []pack.Comment `json:"comment_list,omitempty"`
+	CommentList []pack.Comment `json:"comment_list"`
 }
 
 type CommentListRequest struct {
@@ -121,28 +110,21 @@ type CommentListRequest struct {
 
 // CommentList all videos have same demo comment list
 func CommentList(c *gin.Context) {
-
 	commentListRequest := CommentListRequest{}
-
-	err := c.BindJSON(&commentListRequest)
+	videoId, err := strconv.ParseInt(c.Query("video_id"), 10, 64)
+	commentListRequest.VideoId = videoId
+	commentListRequest.Token = c.Query("token")
 	if err != nil {
 		c.JSON(http.StatusOK, CommentListResponse{
 			Response: pack.Response{StatusCode: 1, StatusMsg: err.Error()},
-			CommentList: []pack.Comment{
-				{},
-			},
 		})
 		return
 	}
-
 	claim, err := jwtUtil.AuthMiddleware.GetClaimsFromJWT(c)
 
 	if err != nil {
 		c.JSON(http.StatusOK, CommentListResponse{
 			Response: pack.Response{StatusCode: 1, StatusMsg: "User doesn't exist" + err.Error()},
-			CommentList: []pack.Comment{
-				{},
-			},
 		})
 		return
 	}
@@ -152,19 +134,14 @@ func CommentList(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusOK, CommentListResponse{
 			Response: pack.Response{StatusCode: 1, StatusMsg: "User doesn't exist" + err.Error()},
-			CommentList: []pack.Comment{
-				{},
-			},
 		})
 		return
 	}
 	comment, err := service.CommentService.ListComment(c, commentListRequest.VideoId)
+
 	if err != nil {
 		c.JSON(http.StatusOK, CommentListResponse{
 			Response: pack.Response{StatusCode: 1, StatusMsg: "video doesn't exist" + err.Error()},
-			CommentList: []pack.Comment{
-				{},
-			},
 		})
 		return
 	}
