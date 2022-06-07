@@ -13,7 +13,7 @@ type Video struct {
 	PlayUrl         string `json:"play_url"`
 	CoverUrl        string `json:"cover_url"`
 	Title           string `json:"title"`
-	CreateTimestamp string `json:"create_timestamp"`
+	CreateTimestamp int64  `json:"create_timestamp"`
 }
 
 func (u *Video) TableName() string {
@@ -22,7 +22,7 @@ func (u *Video) TableName() string {
 
 // CreateVideo create video info
 func CreateVideo(ctx context.Context, video *Video) (*Video, error) {
-	video.CreateTimestamp = time.Now().Format("2006-01-02 15:04:05")
+	video.CreateTimestamp = time.Now().UnixMilli()
 	fmt.Println(video.Author)
 	if err := MysqlDB.WithContext(ctx).Create(video).Error; err != nil {
 		return video, err
