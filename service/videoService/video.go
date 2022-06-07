@@ -91,7 +91,7 @@ func (vs *Impl) Publish(ctx context.Context, file *multipart.FileHeader, title s
 		PlayUrl:         "",
 		CoverUrl:        "",
 		Title:           title,
-		CreateTimestamp: time.Now().Format("2006-01-02 15:04:05"),
+		CreateTimestamp: time.Now().UnixMilli(),
 	}
 
 	videoRecord, err = mysqldb.CreateVideo(ctx, videoRecord)
